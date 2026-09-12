@@ -8,32 +8,62 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 2f;
     [SerializeField] private float rotationSpeed = 360f;
 
-    [Header("Target Distance Settings")]
+    [Header("Player Attack Position Settings")]
     [SerializeField] private float stopGap = 0.15f;
-    [SerializeField] private float resumeGap = 0.35f;
+    [SerializeField] private float arrivalTolerance = 0.25f;
+    [SerializeField] private float resumeExtraDistance = 0.45f;
+
+    [Header("Core Tower Slot Settings")]
+    [SerializeField] private float slotArrivalDistance = 0.2f;
 
     [Header("Navigation Settings")]
     [SerializeField] private float repathInterval = 0.1f;
     [SerializeField] private float navMeshSampleDistance = 2f;
 
+    [Header("Debug - Do Not Edit")]
+    [SerializeField] private bool debugIsOnNavMesh;
+    [SerializeField] private bool debugIsTargetingPlayer;
+    [SerializeField] private bool debugIsAtTarget;
+    [SerializeField] private bool debugAgentIsStopped;
+
+    [SerializeField] private bool debugHasPlayerDestination;
+    [SerializeField] private bool debugHasPath;
+    [SerializeField] private bool debugPathPending;
+
+    [SerializeField] private float debugDistanceToPlayer;
+    [SerializeField] private float debugRemainingDistance;
+    [SerializeField] private float debugStoppingDistance;
+    [SerializeField] private float debugVelocity;
+
+    [SerializeField] private Vector3 debugAgentDestination;
+
+    [SerializeField] private NavMeshPathStatus debugPathStatus;
+
+    [SerializeField] private bool debugLastPlayerSampleSuccess;
+    [SerializeField] private bool debugLastPlayerDestinationAccepted;
+
     private CoreTowerHealth coreTower;
     private Collider coreTowerCollider;
+    private CoreTowerAttackSlots coreTowerAttackSlots;
 
     private PlayerHealth playerHealth;
     private PlayerAggro playerAggro;
     private Collider playerCollider;
 
     private Collider enemyCollider;
-    private Collider currentTargetCollider;
-
     private NavMeshAgent agent;
 
+    private Transform currentCoreTowerSlot;
+
     private float repathTimer;
+
+    private bool hasCoreTowerDestination;
+    private bool hasPlayerDestination;
 
     public bool IsAtTarget { get; private set; }
     public bool IsTargetingPlayer { get; private set; }
 
-    void Start()
+    private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         enemyCollider = GetComponent<Collider>();
@@ -44,6 +74,9 @@ public class EnemyMovement : MonoBehaviour
         {
             coreTowerCollider =
                 coreTower.GetComponent<Collider>();
+
+            coreTowerAttackSlots =
+                coreTower.GetComponent<CoreTowerAttackSlots>();
         }
 
         playerHealth =
@@ -62,16 +95,24 @@ public class EnemyMovement : MonoBehaviour
         agent.angularSpeed = rotationSpeed;
         agent.acceleration = 20f;
         agent.autoBraking = true;
+        agent.autoRepath = true;
+        agent.updateRotation = true;
 
         agent.obstacleAvoidanceType =
             ObstacleAvoidanceType.HighQualityObstacleAvoidance;
 
         agent.avoidancePriority =
-            Random.Range(40, 61);
+            Random.Range(20, 81);
 
-        if (resumeGap < stopGap)
+        if (enemyCollider != null)
         {
-            resumeGap = stopGap;
+            float enemyRadius =
+                GetEnemyHorizontalRadius();
+
+            if (enemyRadius > 0f)
+            {
+                agent.radius = enemyRadius;
+            }
         }
 
         if (coreTower == null)
@@ -85,6 +126,13 @@ public class EnemyMovement : MonoBehaviour
         {
             Debug.LogWarning(
                 "EnemyMovement: CoreTower Collider was not found."
+            );
+        }
+
+        if (coreTowerAttackSlots == null)
+        {
+            Debug.LogWarning(
+                "EnemyMovement: CoreTowerAttackSlots was not found."
             );
         }
 
@@ -108,70 +156,61 @@ public class EnemyMovement : MonoBehaviour
                 "EnemyMovement: Player Collider was not found."
             );
         }
-
-        if (enemyCollider == null)
-        {
-            Debug.LogWarning(
-                "EnemyMovement: Enemy Collider was not found."
-            );
-        }
     }
 
-    void Update()
+    private void Update()
     {
-        if (agent == null || !agent.isOnNavMesh)
+        if (agent == null ||
+            !agent.isOnNavMesh)
         {
             IsAtTarget = false;
             return;
         }
 
-        Collider desiredTargetCollider;
+        bool shouldTargetPlayer =
+            ShouldTargetPlayer();
 
-        if (ShouldTargetPlayer())
+        if (shouldTargetPlayer)
         {
+            if (!IsTargetingPlayer)
+            {
+                ReleaseCoreTowerSlot();
+
+                IsAtTarget = false;
+                hasPlayerDestination = false;
+
+                agent.isStopped = false;
+                agent.ResetPath();
+
+                repathTimer = 0f;
+            }
+
             IsTargetingPlayer = true;
-            desiredTargetCollider = playerCollider;
+
+            UpdatePlayerTarget();
+
+            return;
         }
-        else
+
+        if (IsTargetingPlayer)
         {
             IsTargetingPlayer = false;
-            desiredTargetCollider = coreTowerCollider;
-        }
-
-        if (desiredTargetCollider == null)
-        {
-            StopAgent();
-            currentTargetCollider = null;
-            return;
-        }
-
-        if (currentTargetCollider != desiredTargetCollider)
-        {
-            currentTargetCollider = desiredTargetCollider;
-
             IsAtTarget = false;
-            repathTimer = 0f;
+            hasPlayerDestination = false;
 
             agent.isStopped = false;
+            agent.ResetPath();
+
+            repathTimer = 0f;
+            hasCoreTowerDestination = false;
         }
 
-        UpdateTargetDistance();
+        UpdateCoreTowerTarget();
+    }
 
-        if (IsAtTarget)
-        {
-            agent.isStopped = true;
-            return;
-        }
-
-        agent.isStopped = false;
-
-        repathTimer -= Time.deltaTime;
-
-        if (repathTimer <= 0f)
-        {
-            UpdateDestination();
-            repathTimer = repathInterval;
-        }
+    private void LateUpdate()
+    {
+        UpdateDebugInfo();
     }
 
     private bool ShouldTargetPlayer()
@@ -207,101 +246,244 @@ public class EnemyMovement : MonoBehaviour
                playerAggro.AggroRadius;
     }
 
-    private void UpdateTargetDistance()
+    private void UpdatePlayerTarget()
     {
-        if (currentTargetCollider == null)
+        if (playerCollider == null)
         {
-            IsAtTarget = false;
+            StopAgent();
             return;
         }
 
-        float gap =
-            GetGapToTarget(currentTargetCollider);
+        repathTimer -= Time.deltaTime;
+
+        if (repathTimer <= 0f)
+        {
+            hasPlayerDestination =
+                SetDestinationToPlayer();
+
+            repathTimer = repathInterval;
+        }
+
+        if (!hasPlayerDestination)
+        {
+            IsAtTarget = false;
+            agent.isStopped = false;
+            return;
+        }
+
+        if (agent.pathPending)
+        {
+            return;
+        }
+
+        if (float.IsInfinity(agent.remainingDistance))
+        {
+            IsAtTarget = false;
+            agent.isStopped = false;
+            return;
+        }
+
+        float attackDistance =
+            agent.stoppingDistance +
+            arrivalTolerance;
+
+        float resumeDistance =
+            agent.stoppingDistance +
+            resumeExtraDistance;
 
         if (IsAtTarget)
         {
-            if (gap > resumeGap)
+            if (agent.remainingDistance >
+                resumeDistance)
             {
                 IsAtTarget = false;
+                agent.isStopped = false;
             }
+            else
+            {
+                agent.isStopped = true;
 
-            return;
+                RotateTowardsPlayer();
+
+                return;
+            }
         }
 
-        if (gap <= stopGap)
+        if (agent.remainingDistance <=
+            attackDistance)
         {
             IsAtTarget = true;
-        }
-    }
+            agent.isStopped = true;
 
-    private float GetGapToTarget(
-        Collider targetCollider
-    )
-    {
-        Vector3 enemyCenter =
-            transform.position;
+            RotateTowardsPlayer();
 
-        if (enemyCollider != null)
-        {
-            enemyCenter =
-                enemyCollider.bounds.center;
-        }
-
-        Vector3 targetPoint =
-            targetCollider.ClosestPoint(enemyCenter);
-
-        Vector3 direction =
-            targetPoint - enemyCenter;
-
-        direction.y = 0f;
-
-        float centerToTarget =
-            direction.magnitude;
-
-        float enemyRadius =
-            GetEnemyHorizontalRadius();
-
-        return Mathf.Max(
-            0f,
-            centerToTarget - enemyRadius
-        );
-    }
-
-    private void UpdateDestination()
-    {
-        if (currentTargetCollider == null)
-        {
             return;
         }
 
-        Vector3 enemyCenter =
-            transform.position;
+        IsAtTarget = false;
+        agent.isStopped = false;
+    }
 
-        if (enemyCollider != null)
+    private bool SetDestinationToPlayer()
+    {
+        if (playerCollider == null)
         {
-            enemyCenter =
-                enemyCollider.bounds.center;
+            debugLastPlayerSampleSuccess = false;
+            debugLastPlayerDestinationAccepted = false;
+
+            return false;
         }
 
-        Vector3 targetPoint =
-            currentTargetCollider.ClosestPoint(
-                enemyCenter
+        Vector3 targetPosition =
+            playerCollider.bounds.center;
+
+        targetPosition.y =
+            transform.position.y;
+
+        bool sampleSuccess =
+            NavMesh.SamplePosition(
+                targetPosition,
+                out NavMeshHit hit,
+                navMeshSampleDistance,
+                agent.areaMask
             );
 
-        if (NavMesh.SamplePosition(
-            targetPoint,
+        debugLastPlayerSampleSuccess =
+            sampleSuccess;
+
+        if (!sampleSuccess)
+        {
+            debugLastPlayerDestinationAccepted = false;
+
+            return false;
+        }
+
+        agent.stoppingDistance =
+            GetDesiredCenterDistance(
+                playerCollider
+            );
+
+        bool destinationAccepted =
+            agent.SetDestination(
+                hit.position
+            );
+
+        debugLastPlayerDestinationAccepted =
+            destinationAccepted;
+
+        return destinationAccepted;
+    }
+
+    private void UpdateCoreTowerTarget()
+    {
+        if (coreTower == null ||
+            coreTowerAttackSlots == null)
+        {
+            StopAgent();
+            return;
+        }
+
+        if (currentCoreTowerSlot == null)
+        {
+            currentCoreTowerSlot =
+                coreTowerAttackSlots.ClaimClosestSlot(this);
+
+            IsAtTarget = false;
+            hasCoreTowerDestination = false;
+            repathTimer = 0f;
+        }
+
+        if (currentCoreTowerSlot == null)
+        {
+            StopAgent();
+            return;
+        }
+
+        if (HasReachedCoreTowerSlot())
+        {
+            IsAtTarget = true;
+            agent.isStopped = true;
+
+            RotateTowardsCoreTower();
+
+            return;
+        }
+
+        IsAtTarget = false;
+        agent.isStopped = false;
+
+        repathTimer -= Time.deltaTime;
+
+        if (repathTimer <= 0f)
+        {
+            SetDestinationToPoint(
+                currentCoreTowerSlot.position
+            );
+
+            repathTimer = repathInterval;
+        }
+    }
+
+    private bool HasReachedCoreTowerSlot()
+    {
+        if (!hasCoreTowerDestination)
+        {
+            return false;
+        }
+
+        if (agent.pathPending)
+        {
+            return false;
+        }
+
+        if (float.IsInfinity(agent.remainingDistance))
+        {
+            return false;
+        }
+
+        return agent.remainingDistance <=
+               slotArrivalDistance;
+    }
+
+    private void SetDestinationToPoint(
+        Vector3 targetPosition
+    )
+    {
+        if (!NavMesh.SamplePosition(
+            targetPosition,
             out NavMeshHit hit,
             navMeshSampleDistance,
             agent.areaMask))
         {
-            float enemyRadius =
-                GetEnemyHorizontalRadius();
-
-            agent.stoppingDistance =
-                enemyRadius + stopGap;
-
-            agent.SetDestination(hit.position);
+            hasCoreTowerDestination = false;
+            return;
         }
+
+        agent.stoppingDistance = 0f;
+
+        bool destinationAccepted =
+            agent.SetDestination(hit.position);
+
+        hasCoreTowerDestination =
+            destinationAccepted;
+    }
+
+    private float GetDesiredCenterDistance(
+        Collider targetCollider
+    )
+    {
+        float enemyRadius =
+            GetEnemyHorizontalRadius();
+
+        float targetRadius =
+            GetTargetHorizontalRadius(
+                targetCollider
+            );
+
+        return
+            enemyRadius +
+            targetRadius +
+            stopGap;
     }
 
     private float GetEnemyHorizontalRadius()
@@ -322,9 +504,92 @@ public class EnemyMovement : MonoBehaviour
         );
     }
 
+    private float GetTargetHorizontalRadius(
+        Collider targetCollider
+    )
+    {
+        if (targetCollider == null)
+        {
+            return 0f;
+        }
+
+        Vector3 extents =
+            targetCollider.bounds.extents;
+
+        return Mathf.Max(
+            extents.x,
+            extents.z
+        );
+    }
+
+    private void RotateTowardsPlayer()
+    {
+        if (playerHealth == null)
+        {
+            return;
+        }
+
+        Vector3 direction =
+            playerHealth.transform.position -
+            transform.position;
+
+        direction.y = 0f;
+
+        RotateTowardsDirection(direction);
+    }
+
+    private void RotateTowardsCoreTower()
+    {
+        if (coreTower == null)
+        {
+            return;
+        }
+
+        Vector3 direction =
+            coreTower.transform.position -
+            transform.position;
+
+        direction.y = 0f;
+
+        RotateTowardsDirection(direction);
+    }
+
+    private void RotateTowardsDirection(
+        Vector3 direction
+    )
+    {
+        if (direction.sqrMagnitude < 0.001f)
+        {
+            return;
+        }
+
+        Quaternion targetRotation =
+            Quaternion.LookRotation(direction);
+
+        transform.rotation =
+            Quaternion.RotateTowards(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+    }
+
+    private void ReleaseCoreTowerSlot()
+    {
+        if (coreTowerAttackSlots != null)
+        {
+            coreTowerAttackSlots.ReleaseSlot(this);
+        }
+
+        currentCoreTowerSlot = null;
+        hasCoreTowerDestination = false;
+    }
+
     private void StopAgent()
     {
         IsAtTarget = false;
+        hasCoreTowerDestination = false;
+        hasPlayerDestination = false;
 
         if (agent != null &&
             agent.isOnNavMesh)
@@ -332,5 +597,72 @@ public class EnemyMovement : MonoBehaviour
             agent.isStopped = true;
             agent.ResetPath();
         }
+    }
+
+    private void UpdateDebugInfo()
+    {
+        debugIsTargetingPlayer =
+            IsTargetingPlayer;
+
+        debugIsAtTarget =
+            IsAtTarget;
+
+        debugHasPlayerDestination =
+            hasPlayerDestination;
+
+        if (agent == null)
+        {
+            debugIsOnNavMesh = false;
+            return;
+        }
+
+        debugIsOnNavMesh =
+            agent.isOnNavMesh;
+
+        if (!agent.isOnNavMesh)
+        {
+            return;
+        }
+
+        debugAgentIsStopped =
+            agent.isStopped;
+
+        debugHasPath =
+            agent.hasPath;
+
+        debugPathPending =
+            agent.pathPending;
+
+        debugRemainingDistance =
+            agent.remainingDistance;
+
+        debugStoppingDistance =
+            agent.stoppingDistance;
+
+        debugVelocity =
+            agent.velocity.magnitude;
+
+        debugAgentDestination =
+            agent.destination;
+
+        debugPathStatus =
+            agent.pathStatus;
+
+        if (playerHealth != null)
+        {
+            Vector3 direction =
+                playerHealth.transform.position -
+                transform.position;
+
+            direction.y = 0f;
+
+            debugDistanceToPlayer =
+                direction.magnitude;
+        }
+    }
+
+    private void OnDisable()
+    {
+        ReleaseCoreTowerSlot();
     }
 }

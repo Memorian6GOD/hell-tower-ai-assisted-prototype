@@ -14,49 +14,65 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private Transform attackPoint;
 
     [Header("Animation Settings")]
-    [SerializeField] private PlayerAttackAnimation attackAnimation;
+    [SerializeField]
+    private PlayerAttackAnimation attackAnimation;
 
     [Header("Target Settings")]
     [SerializeField] private LayerMask enemyLayer;
+
+    [Header("Debug - Do Not Edit")]
+    [SerializeField] private bool debugAttackDelayed;
+    [SerializeField] private float debugAttackDelayTimer;
 
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
 
     private float attackTimer;
-
-    private EnemyHealth currentTargetHealth;
+    private float attackDelayTimer;
 
     private bool attackAnimationStarted;
 
-    void Start()
+    public bool IsAttackDelayed =>
+        attackDelayTimer > 0f;
+
+    private void Start()
     {
-        playerMovement = GetComponent<PlayerMovement>();
-        playerHealth = GetComponent<PlayerHealth>();
+        playerMovement =
+            GetComponent<PlayerMovement>();
+
+        playerHealth =
+            GetComponent<PlayerHealth>();
 
         attackTimer = attackWindup;
     }
 
-    void Update()
+    private void Update()
     {
-        if (playerHealth != null && playerHealth.IsDead)
+        if (UpdateAttackDelay())
         {
-            ClearTarget();
             ResetAttackCycle();
             return;
         }
 
-        if (playerMovement.IsMoving)
+        if (playerHealth != null &&
+            playerHealth.IsDead)
         {
-            ClearTarget();
             ResetAttackCycle();
             return;
         }
 
-        Collider nearestEnemy = FindNearestEnemy();
+        if (playerMovement != null &&
+            playerMovement.IsMoving)
+        {
+            ResetAttackCycle();
+            return;
+        }
+
+        Collider nearestEnemy =
+            FindNearestEnemy();
 
         if (nearestEnemy == null)
         {
-            ClearTarget();
             ResetAttackCycle();
             return;
         }
@@ -66,12 +82,9 @@ public class PlayerAttack : MonoBehaviour
 
         if (nearestEnemyHealth == null)
         {
-            ClearTarget();
             ResetAttackCycle();
             return;
         }
-
-        UpdateTarget(nearestEnemyHealth);
 
         RotateTowardsEnemy(nearestEnemy);
 
@@ -84,7 +97,9 @@ public class PlayerAttack : MonoBehaviour
         }
 
         if (attackTimer > 0f)
+        {
             return;
+        }
 
         AttackEnemy(nearestEnemyHealth);
 
@@ -92,23 +107,78 @@ public class PlayerAttack : MonoBehaviour
         attackAnimationStarted = false;
     }
 
+    private void LateUpdate()
+    {
+        debugAttackDelayed =
+            IsAttackDelayed;
+
+        debugAttackDelayTimer =
+            attackDelayTimer;
+    }
+
+    public void StartAttackDelay(
+        float duration
+    )
+    {
+        float safeDuration =
+            Mathf.Max(
+                0f,
+                duration
+            );
+
+        attackDelayTimer =
+            Mathf.Max(
+                attackDelayTimer,
+                safeDuration
+            );
+
+        ResetAttackCycle();
+
+        Debug.Log(
+            "PlayerAttack: Attacks blocked for " +
+            safeDuration.ToString("F1") +
+            " seconds."
+        );
+    }
+
+    private bool UpdateAttackDelay()
+    {
+        if (attackDelayTimer <= 0f)
+        {
+            return false;
+        }
+
+        attackDelayTimer =
+            Mathf.Max(
+                0f,
+                attackDelayTimer -
+                Time.deltaTime
+            );
+
+        return true;
+    }
+
     private Collider FindNearestEnemy()
     {
-        Collider[] enemiesInRange = Physics.OverlapSphere(
-            transform.position,
-            attackRadius,
-            enemyLayer
-        );
+        Collider[] enemiesInRange =
+            Physics.OverlapSphere(
+                transform.position,
+                attackRadius,
+                enemyLayer
+            );
 
         Collider nearestEnemy = null;
-        float shortestDistance = float.MaxValue;
+        float shortestDistance =
+            float.MaxValue;
 
-        foreach (Collider enemy in enemiesInRange)
+        foreach (Collider enemy
+                 in enemiesInRange)
         {
-            float distance = Vector3.Distance(
-                transform.position,
-                enemy.transform.position
-            );
+            float distance =
+                Vector3.Distance(
+                    transform.position,
+                    enemy.transform.position
+                );
 
             if (distance < shortestDistance)
             {
@@ -118,33 +188,6 @@ public class PlayerAttack : MonoBehaviour
         }
 
         return nearestEnemy;
-    }
-
-    private void UpdateTarget(EnemyHealth newTargetHealth)
-    {
-        if (currentTargetHealth == newTargetHealth)
-            return;
-
-        if (currentTargetHealth != null)
-        {
-            currentTargetHealth.HideHealthBar();
-        }
-
-        currentTargetHealth = newTargetHealth;
-
-        if (currentTargetHealth != null)
-        {
-            currentTargetHealth.ShowHealthBar();
-        }
-    }
-
-    private void ClearTarget()
-    {
-        if (currentTargetHealth != null)
-        {
-            currentTargetHealth.HideHealthBar();
-            currentTargetHealth = null;
-        }
     }
 
     private void ResetAttackCycle()
@@ -164,43 +207,62 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackAnimation != null)
         {
-            attackAnimation.Play(attackWindup);
+            attackAnimation.Play(
+                attackWindup
+            );
         }
     }
 
-    private void RotateTowardsEnemy(Collider enemy)
+    private void RotateTowardsEnemy(
+        Collider enemy
+    )
     {
         Vector3 direction =
-            enemy.transform.position - transform.position;
+            enemy.transform.position -
+            transform.position;
 
         direction.y = 0f;
 
         if (direction.sqrMagnitude < 0.001f)
+        {
             return;
+        }
 
         Quaternion targetRotation =
-            Quaternion.LookRotation(direction);
+            Quaternion.LookRotation(
+                direction
+            );
 
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
-        );
+        transform.rotation =
+            Quaternion.RotateTowards(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed *
+                Time.deltaTime
+            );
     }
 
-    private void AttackEnemy(EnemyHealth enemyHealth)
+    private void AttackEnemy(
+        EnemyHealth enemyHealth
+    )
     {
         if (enemyHealth == null)
+        {
             return;
+        }
 
-        if (projectilePrefab == null || attackPoint == null)
+        if (projectilePrefab == null ||
+            attackPoint == null)
+        {
             return;
+        }
 
-        Projectile projectile = Instantiate(
-            projectilePrefab,
-            attackPoint.position,
-            attackPoint.rotation
-        );
+        Projectile projectile =
+            Instantiate(
+                projectilePrefab,
+                attackPoint.position,
+                attackPoint.rotation
+            );
 
         projectile.Initialize(
             enemyHealth,

@@ -15,7 +15,7 @@ public class WorldSpaceBillboard : MonoBehaviour
 
         if (targetCamera == null)
         {
-            Debug.LogError("WorldSpaceBillboard: РєР°РјРµСЂР° РЅРµ РЅР°Р№РґРµРЅР°.");
+            Debug.LogError("WorldSpaceBillboard: камера не найдена.");
             enabled = false;
             return;
         }

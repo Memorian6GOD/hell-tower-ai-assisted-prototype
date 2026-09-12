@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class CoreTowerHealth : MonoBehaviour
@@ -13,29 +14,45 @@ public class CoreTowerHealth : MonoBehaviour
 
     private GameManager gameManager;
 
+    public event Action<CoreTowerHealth> Destroyed;
+
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
     public bool IsDestroyed => isDestroyed;
 
-    void Start()
+    private void Start()
     {
         currentHealth = maxHealth;
 
-        gameManager = FindAnyObjectByType<GameManager>();
+        gameManager =
+            FindAnyObjectByType<GameManager>();
 
         if (healthBar != null)
         {
             healthBar.Show();
-            healthBar.SetHealth(currentHealth, maxHealth);
+            healthBar.SetHealth(
+                currentHealth,
+                maxHealth
+            );
         }
 
-        Debug.Log("Core Tower health: " + currentHealth);
+        Debug.Log(
+            "Core Tower health: " +
+            currentHealth
+        );
     }
 
     public void TakeDamage(int damageAmount)
     {
         if (isDestroyed)
+        {
             return;
+        }
+
+        if (damageAmount <= 0)
+        {
+            return;
+        }
 
         currentHealth -= damageAmount;
 
@@ -46,12 +63,18 @@ public class CoreTowerHealth : MonoBehaviour
 
         if (healthBar != null)
         {
-            healthBar.SetHealth(currentHealth, maxHealth);
+            healthBar.SetHealth(
+                currentHealth,
+                maxHealth
+            );
         }
 
-        Debug.Log("Core Tower health: " + currentHealth);
+        Debug.Log(
+            "Core Tower health: " +
+            currentHealth
+        );
 
-        if (currentHealth <= 0)
+        if (currentHealth == 0)
         {
             DestroyCoreTower();
         }
@@ -60,7 +83,9 @@ public class CoreTowerHealth : MonoBehaviour
     private void DestroyCoreTower()
     {
         if (isDestroyed)
+        {
             return;
+        }
 
         isDestroyed = true;
 
@@ -70,6 +95,8 @@ public class CoreTowerHealth : MonoBehaviour
         }
 
         Debug.Log("CORE TOWER DESTROYED!");
+
+        Destroyed?.Invoke(this);
 
         if (gameManager != null)
         {

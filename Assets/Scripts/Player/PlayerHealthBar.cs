@@ -10,13 +10,13 @@ public class PlayerHealthBar : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            Debug.LogError("PlayerHealthBar: PlayerHealth РЅРµ РЅР°Р·РЅР°С‡РµРЅ.");
+            Debug.LogError("PlayerHealthBar: PlayerHealth не назначен.");
             return;
         }
 
         if (healthSlider == null)
         {
-            Debug.LogError("PlayerHealthBar: Health Slider РЅРµ РЅР°Р·РЅР°С‡РµРЅ.");
+            Debug.LogError("PlayerHealthBar: Health Slider не назначен.");
             return;
         }
 

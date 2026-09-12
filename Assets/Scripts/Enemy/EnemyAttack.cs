@@ -24,6 +24,7 @@ public class EnemyAttack : MonoBehaviour
 
     private float attackTimer;
     private bool attackAnimationStarted;
+    private bool damageMultiplierApplied;
 
     void Start()
     {
@@ -117,6 +118,36 @@ public class EnemyAttack : MonoBehaviour
 
         attackTimer = attackInterval;
         attackAnimationStarted = false;
+    }
+
+    public void ApplyDamageMultiplier(float damageMultiplier)
+    {
+        if (damageMultiplierApplied)
+        {
+            Debug.LogWarning(
+                "EnemyAttack: Damage multiplier was already applied."
+            );
+
+            return;
+        }
+
+        if (damageMultiplier <= 0f)
+        {
+            Debug.LogWarning(
+                "EnemyAttack: Damage multiplier must be greater than 0."
+            );
+
+            return;
+        }
+
+        attackDamage = Mathf.Max(
+            1,
+            Mathf.CeilToInt(
+                attackDamage * damageMultiplier
+            )
+        );
+
+        damageMultiplierApplied = true;
     }
 
     private bool CanAttackCurrentTarget()
