@@ -4,8 +4,6 @@ public class DefenseTowerAttack : MonoBehaviour
 {
     [Header("Attack Settings")]
     [SerializeField] private float attackRadius = 6f;
-    [SerializeField] private int attackDamage = 25;
-    [SerializeField] private float attackInterval = 1f;
     [SerializeField] private float rotationSpeed = 360f;
 
     [Header("Tower References")]
@@ -19,13 +17,40 @@ public class DefenseTowerAttack : MonoBehaviour
     [SerializeField] private float targetSearchInterval = 0.2f;
     [SerializeField] private LayerMask enemyLayer;
 
+    [Header("Diagnostics")]
+    [SerializeField] private bool logShotDamage;
+
     [Header("Debug - Do Not Edit")]
     [SerializeField] private EnemyHealth currentTarget;
     [SerializeField] private float attackTimer;
+    [SerializeField] private CombatStats combatStats;
+    [SerializeField] private float currentAttackInterval;
 
     private float targetSearchTimer;
 
     public EnemyHealth CurrentTarget => currentTarget;
+
+    private void Start()
+    {
+        combatStats = FindAnyObjectByType<CombatStats>();
+
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "DefenseTowerAttack: CombatStats was not found. " +
+                "Check GameProgression in the scene.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
+        currentAttackInterval = combatStats.TowerAttackInterval;
+
+        // Новая башня готова к первому выстрелу.
+        attackTimer = 0f;
+    }
 
     private void Update()
     {
@@ -57,40 +82,29 @@ public class DefenseTowerAttack : MonoBehaviour
 
     private EnemyHealth FindClosestEnemy()
     {
-        Collider[] detectedColliders =
-            Physics.OverlapSphere(
-                transform.position,
-                attackRadius,
-                enemyLayer,
-                QueryTriggerInteraction.Collide
-            );
+        Collider[] detectedColliders = Physics.OverlapSphere(
+            transform.position,
+            attackRadius,
+            enemyLayer,
+            QueryTriggerInteraction.Collide
+        );
 
         EnemyHealth closestEnemy = null;
-        float closestSqrDistance =
-            float.PositiveInfinity;
+        float closestSqrDistance = float.PositiveInfinity;
 
-        foreach (Collider detectedCollider
-                 in detectedColliders)
+        foreach (Collider detectedCollider in detectedColliders)
         {
             EnemyHealth enemyHealth =
-                detectedCollider
-                    .GetComponentInParent<EnemyHealth>();
+                detectedCollider.GetComponentInParent<EnemyHealth>();
 
-            if (enemyHealth == null)
-            {
-                continue;
-            }
-
-            if (enemyHealth.IsDead)
+            if (enemyHealth == null || enemyHealth.IsDead)
             {
                 continue;
             }
 
             float sqrDistance =
-                (
-                    enemyHealth.transform.position -
-                    transform.position
-                ).sqrMagnitude;
+                (enemyHealth.transform.position -
+                 transform.position).sqrMagnitude;
 
             if (sqrDistance < closestSqrDistance)
             {
@@ -104,15 +118,13 @@ public class DefenseTowerAttack : MonoBehaviour
 
     private void RotateTowardsCurrentTarget()
     {
-        if (currentTarget == null ||
-            rotatingPart == null)
+        if (currentTarget == null || rotatingPart == null)
         {
             return;
         }
 
         Vector3 direction =
-            currentTarget.transform.position -
-            rotatingPart.position;
+            currentTarget.transform.position - rotatingPart.position;
 
         direction.y = 0f;
 
@@ -124,88 +136,124 @@ public class DefenseTowerAttack : MonoBehaviour
         Quaternion targetRotation =
             Quaternion.LookRotation(direction);
 
-        rotatingPart.rotation =
-            Quaternion.RotateTowards(
-                rotatingPart.rotation,
-                targetRotation,
-                rotationSpeed * Time.deltaTime
-            );
+        rotatingPart.rotation = Quaternion.RotateTowards(
+            rotatingPart.rotation,
+            targetRotation,
+            rotationSpeed * Time.deltaTime
+        );
     }
 
     private void UpdateAttack()
     {
+        // Перезарядка идёт даже тогда, когда цели нет.
+        // После завершения таймер остаётся равным нулю.
+        attackTimer = Mathf.Max(
+            0f,
+            attackTimer - Time.deltaTime
+        );
+
         if (currentTarget == null)
         {
-            attackTimer = 0f;
             return;
         }
 
         if (currentTarget.IsDead)
         {
             currentTarget = null;
-            attackTimer = 0f;
             return;
         }
 
         float sqrDistanceToTarget =
-            (
-                currentTarget.transform.position -
-                transform.position
-            ).sqrMagnitude;
+            (currentTarget.transform.position -
+             transform.position).sqrMagnitude;
 
-        float attackRadiusSqr =
-            attackRadius * attackRadius;
+        float attackRadiusSqr = attackRadius * attackRadius;
 
-        if (sqrDistanceToTarget >
-            attackRadiusSqr)
+        if (sqrDistanceToTarget > attackRadiusSqr)
         {
             currentTarget = null;
-            attackTimer = 0f;
             return;
         }
 
-        attackTimer -= Time.deltaTime;
-
+        // Смена цели не отменяет ожидание перезарядки.
         if (attackTimer > 0f)
         {
             return;
         }
 
-        ShootAtCurrentTarget();
+        if (!TryShootAtCurrentTarget())
+        {
+            return;
+        }
 
-        attackTimer = attackInterval;
+        // Запускаем перезарядку только после реального выстрела.
+        attackTimer = currentAttackInterval;
     }
 
-    private void ShootAtCurrentTarget()
+    private bool TryShootAtCurrentTarget()
     {
         if (currentTarget == null)
         {
-            return;
+            return false;
         }
 
-        if (projectilePrefab == null ||
-            attackPoint == null)
+        if (projectilePrefab == null || attackPoint == null)
         {
-            return;
+            return false;
         }
 
-        Projectile projectile =
-            Instantiate(
-                projectilePrefab,
-                attackPoint.position,
-                attackPoint.rotation
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "DefenseTowerAttack: CombatStats reference is missing.",
+                this
             );
 
-        projectile.Initialize(
-            currentTarget,
-            attackDamage
+            enabled = false;
+            return false;
+        }
+
+        float calculatedDamage = combatStats.TowerDamage;
+
+        if (calculatedDamage <= 0f)
+        {
+            return false;
+        }
+
+        int shotDamage = Mathf.Max(
+            1,
+            Mathf.RoundToInt(calculatedDamage)
         );
+
+        // Этот интервал будет выдержан ПОСЛЕ данного выстрела.
+        currentAttackInterval = combatStats.TowerAttackInterval;
+
+        Projectile projectile = Instantiate(
+            projectilePrefab,
+            attackPoint.position,
+            attackPoint.rotation
+        );
+
+        projectile.Initialize(currentTarget, shotDamage);
+
+        if (logShotDamage)
+        {
+            Debug.Log(
+                $"DefenseTowerAttack: Shot damage = {shotDamage}. " +
+                $"Time = {Time.time:F3}. " +
+                $"Next interval = {currentAttackInterval:F3}. " +
+                $"Tower: {gameObject.name}",
+                this
+            );
+        }
 
         Debug.Log(
             gameObject.name +
             " fired at " +
             currentTarget.gameObject.name
         );
+
+        return true;
     }
 
     private void ReportTargetChange()
@@ -220,10 +268,7 @@ public class DefenseTowerAttack : MonoBehaviour
         }
         else
         {
-            Debug.Log(
-                gameObject.name +
-                " has no target."
-            );
+            Debug.Log(gameObject.name + " has no target.");
         }
     }
 
@@ -231,9 +276,6 @@ public class DefenseTowerAttack : MonoBehaviour
     {
         Gizmos.color = Color.yellow;
 
-        Gizmos.DrawWireSphere(
-            transform.position,
-            attackRadius
-        );
+        Gizmos.DrawWireSphere(transform.position, attackRadius);
     }
 }

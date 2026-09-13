@@ -3,13 +3,13 @@ using UnityEngine;
 
 public class DefenseTowerHealth : MonoBehaviour
 {
-    [Header("Health Settings")]
-    [SerializeField] private int maxHealth = 300;
+    private CombatStats combatStats;
+    private DefenseTowerHealthBar healthBar;
 
+    private int maxHealth;
     private int currentHealth;
     private bool isDestroyed;
-
-    private DefenseTowerHealthBar healthBar;
+    private bool isInitialized;
 
     public event Action<DefenseTowerHealth> Destroyed;
 
@@ -19,62 +19,68 @@ public class DefenseTowerHealth : MonoBehaviour
 
     private void Start()
     {
+        // Башня создаётся из префаба и находит настройки на сцене.
+        combatStats = FindAnyObjectByType<CombatStats>();
+
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "DefenseTowerHealth: CombatStats was not found. " +
+                "Check GameProgression in the scene.",
+                this
+            );
+            return;
+        }
+
+        int configuredMaxHealth = combatStats.DefenseTowerMaxHealth;
+
+        if (configuredMaxHealth <= 0)
+        {
+            Debug.LogError(
+                "DefenseTowerHealth: Check GameBalanceConfig on CombatStats.",
+                this
+            );
+            return;
+        }
+
+        maxHealth = configuredMaxHealth;
         currentHealth = maxHealth;
         isDestroyed = false;
+        isInitialized = true;
 
         healthBar =
-            GetComponentInChildren<DefenseTowerHealthBar>(
-                true
-            );
+            GetComponentInChildren<DefenseTowerHealthBar>(true);
 
         if (healthBar != null)
         {
-            healthBar.SetHealth(
-                currentHealth,
-                maxHealth
-            );
-
+            healthBar.SetHealth(currentHealth, maxHealth);
             healthBar.Show();
         }
 
         Debug.Log(
-            gameObject.name +
-            " health: " +
-            currentHealth
+            $"DefenseTowerHealth: {gameObject.name} " +
+            $"initial health = {currentHealth}/{maxHealth}.",
+            this
         );
     }
 
     public void TakeDamage(int damageAmount)
     {
-        if (isDestroyed)
+        if (!isInitialized || isDestroyed || damageAmount <= 0)
         {
             return;
         }
 
-        if (damageAmount <= 0)
-        {
-            return;
-        }
-
-        currentHealth -= damageAmount;
-
-        if (currentHealth < 0)
-        {
-            currentHealth = 0;
-        }
+        currentHealth = Mathf.Max(0, currentHealth - damageAmount);
 
         if (healthBar != null)
         {
-            healthBar.SetHealth(
-                currentHealth,
-                maxHealth
-            );
+            healthBar.SetHealth(currentHealth, maxHealth);
         }
 
         Debug.Log(
-            gameObject.name +
-            " health: " +
-            currentHealth
+            $"{gameObject.name} health: {currentHealth}/{maxHealth}",
+            this
         );
 
         if (currentHealth == 0)
@@ -98,8 +104,8 @@ public class DefenseTowerHealth : MonoBehaviour
         }
 
         Debug.Log(
-            gameObject.name +
-            " destroyed!"
+            $"{gameObject.name} destroyed!",
+            this
         );
 
         Destroyed?.Invoke(this);
@@ -110,6 +116,11 @@ public class DefenseTowerHealth : MonoBehaviour
     [ContextMenu("Test Damage 50")]
     private void TestDamage()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         TakeDamage(50);
     }
 }

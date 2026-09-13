@@ -2203,6 +2203,59 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &1295724592
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1295724594}
+  - component: {fileID: 1295724593}
+  m_Layer: 0
+  m_Name: GameProgression
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1295724593
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1295724592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 436a69084e378e448ace3e001eef9506, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CombatStats
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
+  permanentDamageBonus: 0
+  permanentAttackSpeedBonusPercent: 0
+  permanentCritChanceBonusPoints: 0
+  heroDamageBonusPercent: 0
+  towerDamageBonusPercent: 0
+  heroAttackSpeedBonusPercent: 0
+  towerAttackSpeedBonusPercent: 0
+  heroCritChanceBonusPercent: 0
+--- !u!4 &1295724594
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1295724592}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.07926, y: -0.00011, z: 0.01606}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1323950012
 GameObject:
   m_ObjectHideFlags: 0
@@ -3123,6 +3176,10 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 350000
       objectReference: {fileID: 0}
+    - target: {fileID: 6821362826556760259, guid: 63fb256f4ac3f3445ae4fc1312a0cefc, type: 3}
+      propertyPath: combatStats
+      value: 
+      objectReference: {fileID: 1295724593}
     - target: {fileID: 6920809745381092213, guid: 63fb256f4ac3f3445ae4fc1312a0cefc, type: 3}
       propertyPath: m_LocalPosition.x
       value: -3.9808614
@@ -3240,6 +3297,18 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: combatStats
+      value: 
+      objectReference: {fileID: 1295724593}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: attackWindup
+      value: 0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: logShotDamage
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3789112264732311825, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: m_Name
       value: Player
@@ -3252,6 +3321,10 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 4125263132114524075, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: combatStats
+      value: 
+      objectReference: {fileID: 1295724593}
     - target: {fileID: 4410214091724334916, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.07
@@ -3328,3 +3401,4 @@ SceneRoots:
   - {fileID: 788189367}
   - {fileID: 1812757868}
   - {fileID: 1323950016}
+  - {fileID: 1295724594}

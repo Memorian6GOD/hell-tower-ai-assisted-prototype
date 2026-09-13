@@ -3,14 +3,16 @@ using UnityEngine;
 
 public class CoreTowerHealth : MonoBehaviour
 {
-    [Header("Health Settings")]
-    [SerializeField] private int maxHealth = 1000;
+    [Header("Progression")]
+    [SerializeField] private CombatStats combatStats;
 
     [Header("UI")]
     [SerializeField] private CoreTowerHealthBar healthBar;
 
+    private int maxHealth;
     private int currentHealth;
     private bool isDestroyed;
+    private bool isInitialized;
 
     private GameManager gameManager;
 
@@ -22,56 +24,62 @@ public class CoreTowerHealth : MonoBehaviour
 
     private void Start()
     {
-        currentHealth = maxHealth;
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "CoreTowerHealth: Assign CombatStats from GameProgression.",
+                this
+            );
+            return;
+        }
 
-        gameManager =
-            FindAnyObjectByType<GameManager>();
+        int configuredMaxHealth = combatStats.CoreTowerMaxHealth;
+
+        if (configuredMaxHealth <= 0)
+        {
+            Debug.LogError(
+                "CoreTowerHealth: Check GameBalanceConfig on CombatStats.",
+                this
+            );
+            return;
+        }
+
+        maxHealth = configuredMaxHealth;
+        currentHealth = maxHealth;
+        isDestroyed = false;
+        isInitialized = true;
+
+        gameManager = FindAnyObjectByType<GameManager>();
 
         if (healthBar != null)
         {
             healthBar.Show();
-            healthBar.SetHealth(
-                currentHealth,
-                maxHealth
-            );
+            healthBar.SetHealth(currentHealth, maxHealth);
         }
 
         Debug.Log(
-            "Core Tower health: " +
-            currentHealth
+            $"CoreTowerHealth: Initial health = {currentHealth}/{maxHealth}.",
+            this
         );
     }
 
     public void TakeDamage(int damageAmount)
     {
-        if (isDestroyed)
+        if (!isInitialized || isDestroyed || damageAmount <= 0)
         {
             return;
         }
 
-        if (damageAmount <= 0)
-        {
-            return;
-        }
-
-        currentHealth -= damageAmount;
-
-        if (currentHealth < 0)
-        {
-            currentHealth = 0;
-        }
+        currentHealth = Mathf.Max(0, currentHealth - damageAmount);
 
         if (healthBar != null)
         {
-            healthBar.SetHealth(
-                currentHealth,
-                maxHealth
-            );
+            healthBar.SetHealth(currentHealth, maxHealth);
         }
 
         Debug.Log(
-            "Core Tower health: " +
-            currentHealth
+            $"Core Tower health: {currentHealth}/{maxHealth}",
+            this
         );
 
         if (currentHealth == 0)
@@ -94,7 +102,7 @@ public class CoreTowerHealth : MonoBehaviour
             healthBar.Hide();
         }
 
-        Debug.Log("CORE TOWER DESTROYED!");
+        Debug.Log("CORE TOWER DESTROYED!", this);
 
         Destroyed?.Invoke(this);
 
@@ -109,6 +117,11 @@ public class CoreTowerHealth : MonoBehaviour
     [ContextMenu("Test Damage 100")]
     private void TestDamage()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         TakeDamage(100);
     }
 }

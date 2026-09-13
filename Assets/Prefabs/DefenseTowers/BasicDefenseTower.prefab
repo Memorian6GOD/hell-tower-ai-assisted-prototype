@@ -730,8 +730,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefenseTowerAttack
   attackRadius: 6
-  attackDamage: 8
-  attackInterval: 1
   rotationSpeed: 360
   rotatingPart: {fileID: 6863164313176475096}
   projectilePrefab: {fileID: 8888590750719776819, guid: 3b11fc96b1f046046ad03cebfee119ab, type: 3}
@@ -740,8 +738,11 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 8
+  logShotDamage: 0
   currentTarget: {fileID: 0}
   attackTimer: 0
+  combatStats: {fileID: 0}
+  currentAttackInterval: 0
 --- !u!114 &8236237089261506846
 MonoBehaviour:
   m_ObjectHideFlags: 0
