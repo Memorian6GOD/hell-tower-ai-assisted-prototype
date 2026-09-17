@@ -48,6 +48,10 @@ public class DefenseTowerHealth : MonoBehaviour
         isDestroyed = false;
         isInitialized = true;
 
+        // Начальный максимум уже включает все усиления до постройки.
+        // Подписка нужна только для следующих усилений.
+        combatStats.DefenseTowerRunHealthBonusAdded += HandleRunHealthBonusAdded;
+
         healthBar =
             GetComponentInChildren<DefenseTowerHealthBar>(true);
 
@@ -89,6 +93,53 @@ public class DefenseTowerHealth : MonoBehaviour
         }
     }
 
+    private void HandleRunHealthBonusAdded(int amount)
+    {
+        if (!isInitialized || isDestroyed || amount <= 0)
+        {
+            return;
+        }
+
+        if (amount > int.MaxValue - maxHealth)
+        {
+            Debug.LogError(
+                "DefenseTowerHealth: HP overflow. " +
+                "Configure permanent health before Play.",
+                this
+            );
+            return;
+        }
+
+        // Полученный ранее урон сохраняется: 200/300 + 50 = 250/350.
+        // Обрабатываем только новую прибавку, не весь накопленный бонус.
+        maxHealth += amount;
+        currentHealth += amount;
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealth(currentHealth, maxHealth);
+        }
+
+        Debug.Log(
+            $"DefenseTowerHealth: {gameObject.name} run HP upgrade +{amount}. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+    }
+
+    private void UnsubscribeFromHealthBonuses()
+    {
+        if (combatStats != null)
+        {
+            combatStats.DefenseTowerRunHealthBonusAdded -= HandleRunHealthBonusAdded;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromHealthBonuses();
+    }
+
     private void DestroyTower()
     {
         if (isDestroyed)
@@ -97,6 +148,7 @@ public class DefenseTowerHealth : MonoBehaviour
         }
 
         isDestroyed = true;
+        UnsubscribeFromHealthBonuses();
 
         if (healthBar != null)
         {
@@ -122,5 +174,18 @@ public class DefenseTowerHealth : MonoBehaviour
         }
 
         TakeDamage(50);
+    }
+
+    [ContextMenu("Test Health/Print Health")]
+    private void TestPrintHealth()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        Debug.Log(
+            $"DefenseTowerHealth: {gameObject.name} HP = {currentHealth}/{maxHealth}. " +
+            $"IsDestroyed = {isDestroyed}.",
+            this
+        );
     }
 }

@@ -88,6 +88,51 @@ public class CoreTowerHealth : MonoBehaviour
         }
     }
 
+    // Увеличивает максимальное и текущее HP на одинаковую величину.
+    public bool TryAddRunMaxHealth(int amount)
+    {
+        if (!Application.isPlaying || !isInitialized || amount <= 0)
+        {
+            return false;
+        }
+
+        if (isDestroyed)
+        {
+            Debug.Log(
+                "CoreTowerHealth: HP upgrade skipped because CoreTower is destroyed.",
+                this
+            );
+            return false;
+        }
+
+        if (combatStats == null ||
+            !combatStats.TryAddCoreTowerRunMaxHealthBonus(this, amount))
+        {
+            return false;
+        }
+
+        maxHealth = combatStats.CoreTowerMaxHealth;
+        currentHealth += amount;
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealth(currentHealth, maxHealth);
+        }
+
+        Debug.Log(
+            $"CoreTowerHealth: Run HP upgrade +{amount}. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+
+        return true;
+    }
+
+    internal bool CanReceiveHealthUpgradeFrom(CombatStats source)
+    {
+        return isInitialized && !isDestroyed && combatStats == source;
+    }
+
     private void DestroyCoreTower()
     {
         if (isDestroyed)
@@ -123,5 +168,27 @@ public class CoreTowerHealth : MonoBehaviour
         }
 
         TakeDamage(100);
+    }
+
+    [ContextMenu("Test Health/Add 50 Run Max HP")]
+    private void TestAdd50RunMaxHP()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        TryAddRunMaxHealth(50);
+    }
+
+    [ContextMenu("Test Health/Print Health")]
+    private void TestPrintHealth()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        Debug.Log(
+            $"CoreTowerHealth: HP = {currentHealth}/{maxHealth}. " +
+            $"IsDestroyed = {isDestroyed}.",
+            this
+        );
     }
 }

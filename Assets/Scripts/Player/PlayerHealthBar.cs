@@ -10,28 +10,34 @@ public class PlayerHealthBar : MonoBehaviour
     {
         if (playerHealth == null)
         {
-            Debug.LogError("PlayerHealthBar: PlayerHealth не назначен.");
+            Debug.LogError("PlayerHealthBar: PlayerHealth не назначен.", this);
             return;
         }
 
         if (healthSlider == null)
         {
-            Debug.LogError("PlayerHealthBar: Health Slider не назначен.");
+            Debug.LogError("PlayerHealthBar: Health Slider не назначен.", this);
             return;
         }
 
         healthSlider.minValue = 0;
-        healthSlider.maxValue = playerHealth.MaxHealth;
-        healthSlider.value = playerHealth.CurrentHealth;
+        RefreshHealth();
     }
 
     private void Update()
+    {
+        RefreshHealth();
+    }
+
+    private void RefreshHealth()
     {
         if (playerHealth == null || healthSlider == null)
         {
             return;
         }
 
+        // Сначала обновляем предел, затем заполняем полоску текущим HP.
+        healthSlider.maxValue = playerHealth.MaxHealth;
         healthSlider.value = playerHealth.CurrentHealth;
     }
 }

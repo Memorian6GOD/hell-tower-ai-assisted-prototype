@@ -74,6 +74,52 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    //  арточки и тесты выдают здоровье через этот метод.
+    // true означает, что усиление действительно получено.
+    public bool TryAddRunMaxHealth(int amount)
+    {
+        if (!Application.isPlaying || !isInitialized || amount <= 0)
+        {
+            return false;
+        }
+
+        if (IsDead)
+        {
+            Debug.Log(
+                $"PlayerHealth: HP upgrade skipped because Player is dead. " +
+                $"HP: {currentHealth}/{maxHealth}.",
+                this
+            );
+            return false;
+        }
+
+        if (combatStats == null ||
+            !combatStats.TryAddHeroRunMaxHealthBonus(this, amount))
+        {
+            return false;
+        }
+
+        // ѕрибавл€ем одинаковое количество к максимуму и текущему HP.
+        // Ќапример: 60/100 + 20 превращаетс€ в 80/120.
+        maxHealth = combatStats.HeroMaxHealth;
+        currentHealth += amount;
+
+        Debug.Log(
+            $"PlayerHealth: Run HP upgrade +{amount}. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+
+        return true;
+    }
+
+    // CombatStats провер€ет, что усиление получает живой герой,
+    // который использует именно этот экземпл€р расчЄта характеристик.
+    internal bool CanReceiveHealthUpgradeFrom(CombatStats source)
+    {
+        return isInitialized && !IsDead && combatStats == source;
+    }
+
     public bool TryRevive(int healthPercent)
     {
         if (!isInitialized)
@@ -132,5 +178,44 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Player died.", this);
 
         Died?.Invoke(this);
+    }
+    [ContextMenu("Test Health/Take 40 Damage")]
+    private void TestTake40Damage()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        TakeDamage(40);
+    }
+
+    [ContextMenu("Test Health/Add 20 Run Max HP")]
+    private void TestAdd20RunMaxHP()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        TryAddRunMaxHealth(20);
+    }
+
+    [ContextMenu("Test Health/Kill Player")]
+    private void TestKillPlayer()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        TakeDamage(currentHealth);
+    }
+
+    [ContextMenu("Test Health/Print Health")]
+    private void TestPrintHealth()
+    {
+        if (!Application.isPlaying)
+            return;
+
+        Debug.Log(
+            $"PlayerHealth: HP = {currentHealth}/{maxHealth}. " +
+            $"IsDead = {IsDead}.",
+            this
+        );
     }
 }

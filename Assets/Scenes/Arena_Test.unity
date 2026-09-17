@@ -2236,6 +2236,9 @@ MonoBehaviour:
   permanentDamageBonus: 0
   permanentAttackSpeedBonusPercent: 0
   permanentCritChanceBonusPoints: 0
+  permanentHeroMaxHealthBonus: 0
+  permanentCoreTowerMaxHealthBonus: 0
+  permanentDefenseTowerMaxHealthBonus: 0
   heroDamageBonusPercent: 0
   towerDamageBonusPercent: 0
   heroAttackSpeedBonusPercent: 0
