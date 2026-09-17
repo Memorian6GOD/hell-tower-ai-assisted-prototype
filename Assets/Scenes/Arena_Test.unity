@@ -2213,6 +2213,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1295724594}
   - component: {fileID: 1295724593}
+  - component: {fileID: 1295724595}
   m_Layer: 0
   m_Name: GameProgression
   m_TagString: Untagged
@@ -2259,6 +2260,29 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1295724595
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1295724592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3fe7339a8923f7442a44d450462f8ffd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerProgression
+  debugLoaded: 0
+  debugSaveFilePath: 
+  debugGold: 0
+  debugHeroLevel: 0
+  debugHeroDamagePurchases: 0
+  debugHeroCriticalChancePurchases: 0
+  debugHeroAttackSpeedPurchases: 0
+  debugHeroMaxHealthPurchases: 0
+  debugCoreTowerMaxHealthPurchases: 0
+  debugDefenseTowerMaxHealthPurchases: 0
+  debugMapOneRewardClaimed: 0
 --- !u!1 &1323950012
 GameObject:
   m_ObjectHideFlags: 0
