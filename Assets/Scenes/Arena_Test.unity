@@ -2234,6 +2234,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatStats
   balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
+  playerProgression: {fileID: 1295724595}
   permanentDamageBonus: 0
   permanentAttackSpeedBonusPercent: 0
   permanentCritChanceBonusPoints: 0
@@ -2272,11 +2273,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fe7339a8923f7442a44d450462f8ffd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProgression
+  progressionConfig: {fileID: 11400000, guid: caae8dcbfa5e7614dbba30d589681129, type: 2}
   debugLoaded: 0
   debugSaveFilePath: 
   debugGold: 0
   debugHeroLevel: 0
   debugHeroDamagePurchases: 0
+  debugHeroDamagePurchaseLimit: 0
+  debugNextHeroDamagePrice: 0
+  debugHeroPermanentDamageBonus: 0
   debugHeroCriticalChancePurchases: 0
   debugHeroAttackSpeedPurchases: 0
   debugHeroMaxHealthPurchases: 0
