@@ -155,13 +155,13 @@ public class PermanentProgressionConfig : ScriptableObject
     {
         int safeHeroLevel = Mathf.Max(1, currentHeroLevel);
 
-        if (safeHeroLevel < 2)
+        if (safeHeroLevel < 3)
         {
             return 0;
         }
 
         return MultiplyAndClampToIntMax(
-            safeHeroLevel - 1,
+            safeHeroLevel - 2,
             PurchasesPerRequiredBranch
         );
     }

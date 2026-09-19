@@ -190,7 +190,7 @@ public class PlayerProgression : MonoBehaviour
 
     public bool IsHeroCriticalChanceUnlocked()
     {
-        return HeroLevel >= 2;
+        return HeroLevel >= 3;
     }
 
     public int GetHeroCriticalChancePurchaseLimit()
@@ -437,7 +437,7 @@ public class PlayerProgression : MonoBehaviour
         {
             Debug.Log(
                 "PlayerProgression: Hero critical chance " +
-                "unlocks at hero level 2.",
+                "unlocks at hero level 3.",
                 this
             );
 
