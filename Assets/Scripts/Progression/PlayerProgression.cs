@@ -10,7 +10,6 @@ public class PlayerProgression : MonoBehaviour
     private PermanentProgressionConfig progressionConfig;
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private bool debugLoaded;
     [SerializeField] private string debugSaveFilePath;
     [SerializeField] private int debugGold;
     [SerializeField] private int debugHeroLevel;
@@ -126,7 +125,6 @@ public class PlayerProgression : MonoBehaviour
     {
         progress = PlayerProgressSaveSystem.Load();
 
-        debugLoaded = true;
         RefreshDebugInfo();
 
         if (progressionConfig == null)
