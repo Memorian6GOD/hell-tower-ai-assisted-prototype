@@ -1,4 +1,4 @@
-using TMPro;
+ï»¿using TMPro;
 using UnityEngine;
 
 public class PreWavePreparationManager : MonoBehaviour
@@ -23,6 +23,9 @@ public class PreWavePreparationManager : MonoBehaviour
     [SerializeField] private TMP_Text preparationTimerText;
     [SerializeField] private GameObject coreTowerHealthUI;
 
+    [SerializeField]
+    private RunUpgradeSelectionUI runUpgradeSelectionUI;
+
     [Header("Build Grid")]
     [SerializeField] private GameObject defenseTowerBuildGrid;
 
@@ -40,6 +43,8 @@ public class PreWavePreparationManager : MonoBehaviour
     [SerializeField] private float remainingTime;
     [SerializeField] private float waveStartDelayRemaining;
     [SerializeField] private bool playerIsVisible;
+    [SerializeField] private bool isRunUpgradeSelectionActive;
+    [SerializeField] private bool initialRunUpgradeResolved;
 
     private bool placementEventSubscribed;
 
@@ -57,6 +62,9 @@ public class PreWavePreparationManager : MonoBehaviour
 
     public bool PlayerIsVisible =>
         playerIsVisible;
+
+    public bool IsRunUpgradeSelectionActive =>
+        isRunUpgradeSelectionActive;
 
     private void OnEnable()
     {
@@ -108,7 +116,7 @@ public class PreWavePreparationManager : MonoBehaviour
             return;
         }
 
-        BeginWaveStartDelay(
+        FinishPreparation(
             "Preparation time expired."
         );
     }
@@ -189,6 +197,8 @@ public class PreWavePreparationManager : MonoBehaviour
 
         isPreparationActive = true;
         isWaveStartDelayActive = false;
+        isRunUpgradeSelectionActive = false;
+        initialRunUpgradeResolved = false;
 
         ShowTimer();
         ShowBuildGrid();
@@ -209,7 +219,7 @@ public class PreWavePreparationManager : MonoBehaviour
 
         if (remainingTime <= 0f)
         {
-            BeginWaveStartDelay(
+            FinishPreparation(
                 "Preparation duration is zero."
             );
         }
@@ -222,8 +232,76 @@ public class PreWavePreparationManager : MonoBehaviour
             return;
         }
 
-        BeginWaveStartDelay(
+        FinishPreparation(
             "All tower slots were used."
+        );
+    }
+
+    private void FinishPreparation(string reason)
+    {
+        if (!isPreparationActive)
+        {
+            return;
+        }
+
+        if (!initialRunUpgradeResolved &&
+            runUpgradeSelectionUI != null &&
+            runUpgradeSelectionUI.IsSelectionUnlocked)
+        {
+            if (runUpgradeSelectionUI.TryOpenSelection(
+                    HandleInitialRunUpgradeSelected
+                ))
+            {
+                PauseForRunUpgradeSelection(reason);
+                return;
+            }
+
+            Debug.LogWarning(
+                "PreWavePreparationManager: Run upgrade " +
+                "selection was unlocked but could not open. " +
+                "The first wave will start without it.",
+                this
+            );
+        }
+
+        initialRunUpgradeResolved = true;
+        BeginWaveStartDelay(reason);
+    }
+
+    private void PauseForRunUpgradeSelection(
+        string reason
+    )
+    {
+        isPreparationActive = false;
+        remainingTime = 0f;
+
+        towerPlacement.ClosePlacement();
+
+        HideTimer();
+        HideBuildGrid();
+        HideCoreTowerHealthUI();
+
+        isRunUpgradeSelectionActive = true;
+
+        Debug.Log(
+            "PreWavePreparationManager: " +
+            reason +
+            " Waiting for the initial run upgrade choice.",
+            this
+        );
+    }
+
+    private void HandleInitialRunUpgradeSelected()
+    {
+        if (!isRunUpgradeSelectionActive)
+        {
+            return;
+        }
+
+        initialRunUpgradeResolved = true;
+
+        BeginWaveStartDelay(
+            "Initial run upgrade selected."
         );
     }
 
@@ -231,12 +309,14 @@ public class PreWavePreparationManager : MonoBehaviour
         string reason
     )
     {
-        if (!isPreparationActive)
+        if (!isPreparationActive &&
+            !isRunUpgradeSelectionActive)
         {
             return;
         }
 
         isPreparationActive = false;
+        isRunUpgradeSelectionActive = false;
         remainingTime = 0f;
 
         towerPlacement.ClosePlacement();
@@ -395,7 +475,7 @@ public class PreWavePreparationManager : MonoBehaviour
             );
 
         preparationTimerText.text =
-            "ÏÎÄÃÎÒÎÂÊÀ: " +
+            "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: " +
             displayedSeconds;
     }
 
@@ -579,6 +659,16 @@ public class PreWavePreparationManager : MonoBehaviour
             );
 
             referencesAreValid = false;
+        }
+
+        if (runUpgradeSelectionUI == null)
+        {
+            Debug.LogWarning(
+                "PreWavePreparationManager: Run Upgrade " +
+                "Selection UI is not assigned. Heroes at " +
+                "level 2 or above will not receive the " +
+                "initial run upgrade choice."
+            );
         }
 
         if (defenseTowerBuildGrid == null)

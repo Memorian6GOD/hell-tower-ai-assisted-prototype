@@ -1,4 +1,4 @@
-using UnityEngine;
+п»їusing UnityEngine;
 
 [RequireComponent(typeof(PlayerProgression))]
 [DisallowMultipleComponent]
@@ -19,7 +19,7 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0f)]
     private float permanentAttackSpeedBonusPercent = 0f;
 
-    // Процентные пункты: 3% + 2 пункта = 5%.
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ: 3% + 2 пїЅпїЅпїЅпїЅпїЅпїЅ = 5%.
     [SerializeField, Range(0f, 100f)]
     private float permanentCritChanceBonusPoints = 0f;
 
@@ -34,8 +34,8 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0)]
     private int permanentDefenseTowerMaxHealthBonus = 0;
 
-    // Общий временный бонус для всех защитных башен.
-    // Его получают уже построенные и будущие башни.
+    // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
     private int defenseTowerRunMaxHealthBonus;
 
     public int DefenseTowerRunMaxHealthBonus =>
@@ -44,13 +44,13 @@ public class CombatStats : MonoBehaviour
     internal event System.Action<int>
         DefenseTowerRunHealthBonusAdded;
 
-    // Временный бонус CoreTower хранится отдельно.
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ CoreTower пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.
     private int coreTowerRunMaxHealthBonus;
 
     public int CoreTowerRunMaxHealthBonus =>
         coreTowerRunMaxHealthBonus;
 
-    // Этот бонус существует только во время текущего забега.
+    // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
     private int heroRunMaxHealthBonus;
 
     public int HeroRunMaxHealthBonus =>
@@ -70,10 +70,16 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0f)]
     private float towerAttackSpeedBonusPercent = 0f;
 
-    // Относительная прибавка:
-    // постоянный шанс 5% с бонусом 20% даёт 6%.
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ 5% пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ 20% пїЅпїЅпїЅ 6%.
     [SerializeField, Min(0f)]
     private float heroCritChanceBonusPercent = 0f;
+
+    public float HeroRunDamageBonusPercent =>
+        Mathf.Max(0f, heroDamageBonusPercent);
+
+    public float HeroRunAttackSpeedBonusPercent =>
+        Mathf.Max(0f, heroAttackSpeedBonusPercent);
 
     private void Awake()
     {
@@ -377,6 +383,65 @@ public class CombatStats : MonoBehaviour
                 balanceConfig.HeroCritDamageMultiplier
             );
         }
+    }
+
+    public bool TryAddHeroRunDamageBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref heroDamageBonusPercent,
+            amount,
+            "hero damage"
+        );
+    }
+
+    public bool TryAddHeroRunAttackSpeedBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref heroAttackSpeedBonusPercent,
+            amount,
+            "hero attack speed"
+        );
+    }
+
+    private bool TryAddRunBonusPercent(
+        ref float currentBonusPercent,
+        float amount,
+        string statName
+    )
+    {
+        if (!Application.isPlaying ||
+            balanceConfig == null ||
+            amount <= 0f ||
+            float.IsNaN(amount) ||
+            float.IsInfinity(amount))
+        {
+            return false;
+        }
+
+        double newBonus =
+            Mathf.Max(0f, currentBonusPercent)
+            + (double)amount;
+
+        if (newBonus > float.MaxValue)
+        {
+            return false;
+        }
+
+        currentBonusPercent = (float)newBonus;
+
+        Debug.Log(
+            "CombatStats: Run " +
+            $"{statName} bonus increased by " +
+            $"{amount:F2}%. Total run bonus = " +
+            $"{currentBonusPercent:F2}%.",
+            this
+        );
+
+        return true;
     }
 
     internal bool TryAddHeroRunMaxHealthBonus(
