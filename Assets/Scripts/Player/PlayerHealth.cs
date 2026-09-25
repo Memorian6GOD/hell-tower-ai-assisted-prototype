@@ -74,8 +74,53 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // Карточки и тесты выдают здоровье через этот метод.
-    // true означает, что усиление действительно получено.
+    public int RestoreHealthPercent(float healthPercent)
+    {
+        if (!Application.isPlaying ||
+            !isInitialized ||
+            IsDead ||
+            healthPercent <= 0f ||
+            float.IsNaN(healthPercent) ||
+            float.IsInfinity(healthPercent))
+        {
+            return 0;
+        }
+
+        int missingHealth = maxHealth - currentHealth;
+
+        if (missingHealth <= 0)
+        {
+            return 0;
+        }
+
+        double clampedPercent =
+            Math.Min(100d, healthPercent);
+
+        int requestedHealth = (int)Math.Min(
+            int.MaxValue,
+            Math.Ceiling(
+                maxHealth * clampedPercent / 100d
+            )
+        );
+
+        int restoredHealth = Math.Min(
+            missingHealth,
+            Math.Max(1, requestedHealth)
+        );
+
+        currentHealth += restoredHealth;
+
+        Debug.Log(
+            $"PlayerHealth: Restored {restoredHealth} HP. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+
+        return restoredHealth;
+    }
+
+    // РљР°СЂС‚РѕС‡РєРё Рё С‚РµСЃС‚С‹ РІС‹РґР°СЋС‚ Р·РґРѕСЂРѕРІСЊРµ С‡РµСЂРµР· СЌС‚РѕС‚ РјРµС‚РѕРґ.
+    // true РѕР·РЅР°С‡Р°РµС‚, С‡С‚Рѕ СѓСЃРёР»РµРЅРёРµ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ РїРѕР»СѓС‡РµРЅРѕ.
     public bool TryAddRunMaxHealth(int amount)
     {
         if (!Application.isPlaying || !isInitialized || amount <= 0)
@@ -99,8 +144,8 @@ public class PlayerHealth : MonoBehaviour
             return false;
         }
 
-        // Прибавляем одинаковое количество к максимуму и текущему HP.
-        // Например: 60/100 + 20 превращается в 80/120.
+        // РџСЂРёР±Р°РІР»СЏРµРј РѕРґРёРЅР°РєРѕРІРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ Рє РјР°РєСЃРёРјСѓРјСѓ Рё С‚РµРєСѓС‰РµРјСѓ HP.
+        // РќР°РїСЂРёРјРµСЂ: 60/100 + 20 РїСЂРµРІСЂР°С‰Р°РµС‚СЃСЏ РІ 80/120.
         maxHealth = combatStats.HeroMaxHealth;
         currentHealth += amount;
 
@@ -113,8 +158,8 @@ public class PlayerHealth : MonoBehaviour
         return true;
     }
 
-    // CombatStats проверяет, что усиление получает живой герой,
-    // который использует именно этот экземпляр расчёта характеристик.
+    // CombatStats РїСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ СѓСЃРёР»РµРЅРёРµ РїРѕР»СѓС‡Р°РµС‚ Р¶РёРІРѕР№ РіРµСЂРѕР№,
+    // РєРѕС‚РѕСЂС‹Р№ РёСЃРїРѕР»СЊР·СѓРµС‚ РёРјРµРЅРЅРѕ СЌС‚РѕС‚ СЌРєР·РµРјРїР»СЏСЂ СЂР°СЃС‡С‘С‚Р° С…Р°СЂР°РєС‚РµСЂРёСЃС‚РёРє.
     internal bool CanReceiveHealthUpgradeFrom(CombatStats source)
     {
         return isInitialized && !IsDead && combatStats == source;

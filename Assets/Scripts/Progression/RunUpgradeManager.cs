@@ -5,7 +5,15 @@ using UnityEngine;
 public enum RunUpgradeType
 {
     HeroDamage,
-    HeroAttackSpeed
+    HeroAttackSpeed,
+    TowerDamage,
+    TowerAttackSpeed
+}
+
+public enum RunUpgradeCategory
+{
+    Hero,
+    DefenseTower
 }
 
 [Serializable]
@@ -28,6 +36,22 @@ public sealed class RunUpgradeDefinition
     public string Description => description;
     public float BonusPercent => Mathf.Max(0.01f, bonusPercent);
     public int MaximumStacks => Mathf.Clamp(maximumStacks, 1, 3);
+
+    public RunUpgradeCategory Category
+    {
+        get
+        {
+            switch (upgradeType)
+            {
+                case RunUpgradeType.TowerDamage:
+                case RunUpgradeType.TowerAttackSpeed:
+                    return RunUpgradeCategory.DefenseTower;
+
+                default:
+                    return RunUpgradeCategory.Hero;
+            }
+        }
+    }
 
     public RunUpgradeDefinition()
     {
@@ -81,8 +105,11 @@ public class RunUpgradeManager : MonoBehaviour
 
     [Header("Debug - Do Not Edit")]
     [SerializeField] private bool selectionInProgress;
+    [SerializeField] private RunUpgradeCategory debugCurrentCategory;
     [SerializeField] private int debugHeroDamageStacks;
     [SerializeField] private int debugHeroAttackSpeedStacks;
+    [SerializeField] private int debugTowerDamageStacks;
+    [SerializeField] private int debugTowerAttackSpeedStacks;
     [SerializeField] private int debugAvailableUpgradeCount;
 
     private readonly Dictionary<RunUpgradeType, int>
@@ -121,7 +148,28 @@ public class RunUpgradeManager : MonoBehaviour
         return 0;
     }
 
-    public bool TryBeginSelection()
+    public bool TryBeginInitialHeroSelection()
+    {
+        if (!IsSelectionUnlocked)
+        {
+            return false;
+        }
+
+        return TryBeginSelectionInternal(
+            RunUpgradeCategory.Hero
+        );
+    }
+
+    public bool TryBeginSelection(
+        RunUpgradeCategory category
+    )
+    {
+        return TryBeginSelectionInternal(category);
+    }
+
+    private bool TryBeginSelectionInternal(
+        RunUpgradeCategory category
+    )
     {
         if (!Application.isPlaying)
         {
@@ -150,19 +198,14 @@ public class RunUpgradeManager : MonoBehaviour
             return false;
         }
 
-        if (!IsSelectionUnlocked)
-        {
-            return false;
-        }
-
-        BuildCurrentOptions();
+        BuildCurrentOptions(category);
 
         if (currentOptions.Count == 0)
         {
-            Debug.LogWarning(
+            Debug.Log(
                 "RunUpgradeManager: No run upgrades are " +
-                "available. Every upgrade may have reached " +
-                "its stack limit.",
+                "available for this category. The selection " +
+                "will be skipped.",
                 this
             );
 
@@ -170,6 +213,7 @@ public class RunUpgradeManager : MonoBehaviour
         }
 
         selectionInProgress = true;
+        debugCurrentCategory = category;
         RefreshDebugInfo();
 
         Debug.Log(
@@ -273,6 +317,18 @@ public class RunUpgradeManager : MonoBehaviour
                         definition.BonusPercent
                     );
 
+            case RunUpgradeType.TowerDamage:
+                return combatStats
+                    .TryAddTowerRunDamageBonusPercent(
+                        definition.BonusPercent
+                    );
+
+            case RunUpgradeType.TowerAttackSpeed:
+                return combatStats
+                    .TryAddTowerRunAttackSpeedBonusPercent(
+                        definition.BonusPercent
+                    );
+
             default:
                 Debug.LogError(
                     "RunUpgradeManager: Unsupported upgrade " +
@@ -284,7 +340,9 @@ public class RunUpgradeManager : MonoBehaviour
         }
     }
 
-    private void BuildCurrentOptions()
+    private void BuildCurrentOptions(
+        RunUpgradeCategory category
+    )
     {
         currentOptions.Clear();
 
@@ -297,6 +355,7 @@ public class RunUpgradeManager : MonoBehaviour
                  in upgradeDefinitions)
         {
             if (definition == null ||
+                definition.Category != category ||
                 !addedTypes.Add(definition.UpgradeType))
             {
                 continue;
@@ -391,12 +450,7 @@ public class RunUpgradeManager : MonoBehaviour
                 new List<RunUpgradeDefinition>();
         }
 
-        if (upgradeDefinitions.Count > 0)
-        {
-            return;
-        }
-
-        upgradeDefinitions.Add(
+        EnsureDefinition(
             new RunUpgradeDefinition(
                 RunUpgradeType.HeroDamage,
                 "DAMAGE",
@@ -405,7 +459,7 @@ public class RunUpgradeManager : MonoBehaviour
             )
         );
 
-        upgradeDefinitions.Add(
+        EnsureDefinition(
             new RunUpgradeDefinition(
                 RunUpgradeType.HeroAttackSpeed,
                 "ATTACK SPEED",
@@ -413,6 +467,42 @@ public class RunUpgradeManager : MonoBehaviour
                 10f
             )
         );
+
+        EnsureDefinition(
+            new RunUpgradeDefinition(
+                RunUpgradeType.TowerDamage,
+                "TOWER DAMAGE",
+                "Increases defense tower damage by 10%.",
+                10f
+            )
+        );
+
+        EnsureDefinition(
+            new RunUpgradeDefinition(
+                RunUpgradeType.TowerAttackSpeed,
+                "TOWER ATTACK SPEED",
+                "Increases defense tower attack speed by 10%.",
+                10f
+            )
+        );
+    }
+
+    private void EnsureDefinition(
+        RunUpgradeDefinition definitionToAdd
+    )
+    {
+        foreach (RunUpgradeDefinition definition
+                 in upgradeDefinitions)
+        {
+            if (definition != null &&
+                definition.UpgradeType ==
+                definitionToAdd.UpgradeType)
+            {
+                return;
+            }
+        }
+
+        upgradeDefinitions.Add(definitionToAdd);
     }
 
     private void RefreshDebugInfo()
@@ -422,6 +512,12 @@ public class RunUpgradeManager : MonoBehaviour
 
         debugHeroAttackSpeedStacks =
             GetStackCount(RunUpgradeType.HeroAttackSpeed);
+
+        debugTowerDamageStacks =
+            GetStackCount(RunUpgradeType.TowerDamage);
+
+        debugTowerAttackSpeedStacks =
+            GetStackCount(RunUpgradeType.TowerAttackSpeed);
 
         if (!selectionInProgress)
         {

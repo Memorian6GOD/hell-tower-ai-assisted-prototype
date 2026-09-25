@@ -58,6 +58,8 @@ public class WaveManager : MonoBehaviour
     public bool IsWaveActive { get; private set; }
     public bool AreAllWavesCompleted { get; private set; }
 
+    public event Action<int> WaveCompleted;
+
     private float activeHealthMultiplier = 1f;
     private float activeDamageMultiplier = 1f;
 
@@ -135,18 +137,23 @@ public class WaveManager : MonoBehaviour
     [ContextMenu("Start Wave")]
     public void StartWave()
     {
+        TryStartWave();
+    }
+
+    public bool TryStartWave()
+    {
         if (!Application.isPlaying)
         {
             Debug.LogWarning(
                 "WaveManager: Wave works only in Play Mode."
             );
 
-            return;
+            return false;
         }
 
         if (!CanStartNextWave())
         {
-            return;
+            return false;
         }
 
         int nextWave = CurrentWave + 1;
@@ -172,7 +179,7 @@ public class WaveManager : MonoBehaviour
                 "WaveManager: Wave could not be started."
             );
 
-            return;
+            return false;
         }
 
         CurrentWave = nextWave;
@@ -183,6 +190,8 @@ public class WaveManager : MonoBehaviour
             $"of {TotalWaves} started. " +
             $"Name: {waveToStart.WaveName}."
         );
+
+        return true;
     }
 
     private bool CanStartNextWave()
@@ -441,5 +450,7 @@ public class WaveManager : MonoBehaviour
                 "waves completed."
             );
         }
+
+        WaveCompleted?.Invoke(CurrentWave);
     }
 }

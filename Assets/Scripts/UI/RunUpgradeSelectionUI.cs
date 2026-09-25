@@ -20,8 +20,7 @@ public sealed class RunUpgradeCardUI
         cardRoot != null &&
         selectButton != null &&
         titleText != null &&
-        descriptionText != null &&
-        stackText != null;
+        descriptionText != null;
 
     public void Show(
         RunUpgradeDefinition definition,
@@ -33,8 +32,11 @@ public sealed class RunUpgradeCardUI
 
         titleText.text = definition.DisplayName;
         descriptionText.text = definition.Description;
-        stackText.text =
-            $"{currentStacks + 1} / {definition.MaximumStacks}";
+        if (stackText != null)
+        {
+            stackText.text =
+                $"{currentStacks + 1} / {definition.MaximumStacks}";
+        }
 
         clickListener = onSelected;
         selectButton.onClick.AddListener(clickListener);
@@ -97,8 +99,38 @@ public class RunUpgradeSelectionUI : MonoBehaviour
         CloseVisuals();
     }
 
-    public bool TryOpenSelection(
+    public bool TryOpenInitialHeroSelection(
         Action onSelectionCompleted
+    )
+    {
+        if (!IsSelectionUnlocked)
+        {
+            return false;
+        }
+
+        return TryOpenSelectionInternal(
+            RunUpgradeCategory.Hero,
+            onSelectionCompleted,
+            true
+        );
+    }
+
+    public bool TryOpenSelection(
+        RunUpgradeCategory category,
+        Action onSelectionCompleted
+    )
+    {
+        return TryOpenSelectionInternal(
+            category,
+            onSelectionCompleted,
+            false
+        );
+    }
+
+    private bool TryOpenSelectionInternal(
+        RunUpgradeCategory category,
+        Action onSelectionCompleted,
+        bool isInitialSelection
     )
     {
         if (isOpen)
@@ -111,7 +143,11 @@ public class RunUpgradeSelectionUI : MonoBehaviour
             return false;
         }
 
-        if (!runUpgradeManager.TryBeginSelection())
+        bool selectionStarted = isInitialSelection
+            ? runUpgradeManager.TryBeginInitialHeroSelection()
+            : runUpgradeManager.TryBeginSelection(category);
+
+        if (!selectionStarted)
         {
             return false;
         }
@@ -161,7 +197,10 @@ public class RunUpgradeSelectionUI : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = "CHOOSE AN UPGRADE";
+            titleText.text = category ==
+                RunUpgradeCategory.DefenseTower
+                ? "CHOOSE A TOWER UPGRADE"
+                : "CHOOSE A HERO UPGRADE";
         }
 
         selectionRoot.SetActive(true);

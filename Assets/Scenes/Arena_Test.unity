@@ -2990,6 +2990,7 @@ GameObject:
   - component: {fileID: 1295724593}
   - component: {fileID: 1295724595}
   - component: {fileID: 1295724596}
+  - component: {fileID: 1295724597}
   m_Layer: 0
   m_Name: GameProgression
   m_TagString: Untagged
@@ -3097,10 +3098,46 @@ MonoBehaviour:
     description: +10% hero attack speed
     bonusPercent: 10
     maximumStacks: 3
+  - upgradeType: 2
+    displayName: TOWER DAMAGE
+    description: Increases defense tower damage by 10%.
+    bonusPercent: 10
+    maximumStacks: 3
+  - upgradeType: 3
+    displayName: TOWER ATTACK SPEED
+    description: Increases defense tower attack speed by 10%.
+    bonusPercent: 10
+    maximumStacks: 3
   selectionInProgress: 0
+  debugCurrentCategory: 0
   debugHeroDamageStacks: 0
   debugHeroAttackSpeedStacks: 0
+  debugTowerDamageStacks: 0
+  debugTowerAttackSpeedStacks: 0
   debugAvailableUpgradeCount: 0
+--- !u!114 &1295724597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1295724592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4567686a87c02984494483892666de5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BetweenWaveRewardManager
+  waveManager: {fileID: 329377295}
+  runUpgradeSelectionUI: {fileID: 1939099328}
+  playerHealth: {fileID: 2079961573}
+  coreTowerHealth: {fileID: 301995903}
+  healthRestorePercent: 25
+  nextWaveDelay: 0.5
+  healthRewardDelay: 2
+  isResolvingReward: 0
+  lastCompletedWave: 0
+  lastHeroHealthRestored: 0
+  lastCoreTowerHealthRestored: 0
 --- !u!1 &1323950012
 GameObject:
   m_ObjectHideFlags: 0
@@ -4566,6 +4603,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2027469481}
   m_CullTransparentMesh: 1
+--- !u!114 &2079961573 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4125263132114524075, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+  m_PrefabInstance: {fileID: 7292513963770836414}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6176068b31bbc6d4d926af3a9c7b9314, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
 --- !u!1001 &784855921506543982
 PrefabInstance:
   m_ObjectHideFlags: 0

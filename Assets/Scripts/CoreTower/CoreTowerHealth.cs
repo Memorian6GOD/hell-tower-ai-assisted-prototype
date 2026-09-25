@@ -88,7 +88,57 @@ public class CoreTowerHealth : MonoBehaviour
         }
     }
 
-    // Увеличивает максимальное и текущее HP на одинаковую величину.
+    public int RestoreHealthPercent(float healthPercent)
+    {
+        if (!Application.isPlaying ||
+            !isInitialized ||
+            isDestroyed ||
+            healthPercent <= 0f ||
+            float.IsNaN(healthPercent) ||
+            float.IsInfinity(healthPercent))
+        {
+            return 0;
+        }
+
+        int missingHealth = maxHealth - currentHealth;
+
+        if (missingHealth <= 0)
+        {
+            return 0;
+        }
+
+        double clampedPercent =
+            Math.Min(100d, healthPercent);
+
+        int requestedHealth = (int)Math.Min(
+            int.MaxValue,
+            Math.Ceiling(
+                maxHealth * clampedPercent / 100d
+            )
+        );
+
+        int restoredHealth = Math.Min(
+            missingHealth,
+            Math.Max(1, requestedHealth)
+        );
+
+        currentHealth += restoredHealth;
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealth(currentHealth, maxHealth);
+        }
+
+        Debug.Log(
+            $"CoreTowerHealth: Restored {restoredHealth} HP. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+
+        return restoredHealth;
+    }
+
+    // РЈРІРµР»РёС‡РёРІР°РµС‚ РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ Рё С‚РµРєСѓС‰РµРµ HP РЅР° РѕРґРёРЅР°РєРѕРІСѓСЋ РІРµР»РёС‡РёРЅСѓ.
     public bool TryAddRunMaxHealth(int amount)
     {
         if (!Application.isPlaying || !isInitialized || amount <= 0)

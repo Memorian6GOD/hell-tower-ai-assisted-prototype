@@ -248,7 +248,7 @@ public class PreWavePreparationManager : MonoBehaviour
             runUpgradeSelectionUI != null &&
             runUpgradeSelectionUI.IsSelectionUnlocked)
         {
-            if (runUpgradeSelectionUI.TryOpenSelection(
+            if (runUpgradeSelectionUI.TryOpenInitialHeroSelection(
                     HandleInitialRunUpgradeSelected
                 ))
             {
@@ -475,7 +475,7 @@ public class PreWavePreparationManager : MonoBehaviour
             );
 
         preparationTimerText.text =
-            "����������: " +
+            "PREPARATION: " +
             displayedSeconds;
     }
 

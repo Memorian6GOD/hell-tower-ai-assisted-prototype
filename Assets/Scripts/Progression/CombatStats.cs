@@ -81,6 +81,12 @@ public class CombatStats : MonoBehaviour
     public float HeroRunAttackSpeedBonusPercent =>
         Mathf.Max(0f, heroAttackSpeedBonusPercent);
 
+    public float TowerRunDamageBonusPercent =>
+        Mathf.Max(0f, towerDamageBonusPercent);
+
+    public float TowerRunAttackSpeedBonusPercent =>
+        Mathf.Max(0f, towerAttackSpeedBonusPercent);
+
     private void Awake()
     {
         if (playerProgression == null)
@@ -404,6 +410,28 @@ public class CombatStats : MonoBehaviour
             ref heroAttackSpeedBonusPercent,
             amount,
             "hero attack speed"
+        );
+    }
+
+    public bool TryAddTowerRunDamageBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref towerDamageBonusPercent,
+            amount,
+            "defense tower damage"
+        );
+    }
+
+    public bool TryAddTowerRunAttackSpeedBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref towerAttackSpeedBonusPercent,
+            amount,
+            "defense tower attack speed"
         );
     }
 
