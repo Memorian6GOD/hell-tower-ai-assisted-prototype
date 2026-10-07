@@ -440,6 +440,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 35
   showHealthBarOnStart: 0
+  debugPoisonActive: 0
+  debugPoisonTickDamage: 0
+  debugPoisonRemainingDuration: 0
+  debugPoisonTimeUntilNextTick: 0
+  debugStunActive: 0
+  debugStunRemainingDuration: 0
+  debugDisabledAttackBehaviourCount: 0
+  debugSlowActive: 0
+  debugSlowPercent: 0
+  debugSlowRemainingDuration: 0
+  debugCurrentAgentSpeed: 0
 --- !u!114 &5129780838239145791
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -457,6 +468,7 @@ MonoBehaviour:
   stopGap: 0.15
   arrivalTolerance: 0.25
   resumeExtraDistance: 0.45
+  aggroConfirmationTime: 0.3
   slotArrivalDistance: 0.2
   repathInterval: 0.1
   navMeshSampleDistance: 2
@@ -468,6 +480,10 @@ MonoBehaviour:
   debugHasPath: 0
   debugPathPending: 0
   debugDistanceToPlayer: 0
+  debugAggroRadius: 0
+  debugDisengageRadius: 0
+  debugIsConfirmingAggro: 0
+  debugAggroConfirmationTimer: 0
   debugRemainingDistance: 0
   debugStoppingDistance: 0
   debugVelocity: 0
@@ -475,6 +491,9 @@ MonoBehaviour:
   debugPathStatus: 0
   debugLastPlayerSampleSuccess: 0
   debugLastPlayerDestinationAccepted: 0
+  debugCurrentTarget: CoreTower
+  debugTargetSwitchCount: 0
+  debugLastTargetSwitch: None
 --- !u!114 &1549225956178612692
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -527,7 +546,7 @@ NavMeshAgent:
   m_Height: 2
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_ObstacleAvoidanceType: 0
 --- !u!114 &4691633597951895184
 MonoBehaviour:
   m_ObjectHideFlags: 0

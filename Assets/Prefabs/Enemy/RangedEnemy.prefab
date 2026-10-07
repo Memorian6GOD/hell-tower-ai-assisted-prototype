@@ -469,7 +469,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 928071a521edf1c47aedcd5da9c2c544, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
-  maxHealth: 18
+  maxHealth: 50
   showHealthBarOnStart: 0
 --- !u!195 &4861550394625150433
 NavMeshAgent:

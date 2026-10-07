@@ -13,6 +13,10 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float arrivalTolerance = 0.25f;
     [SerializeField] private float resumeExtraDistance = 0.45f;
 
+    [Header("Player Aggro Settings")]
+    [SerializeField, Min(0f)]
+    private float aggroConfirmationTime = 0.3f;
+
     [Header("Core Tower Slot Settings")]
     [SerializeField] private float slotArrivalDistance = 0.2f;
 
@@ -31,6 +35,12 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private bool debugPathPending;
 
     [SerializeField] private float debugDistanceToPlayer;
+    [SerializeField] private float debugAggroRadius;
+    [SerializeField] private float debugDisengageRadius;
+
+    [SerializeField] private bool debugIsConfirmingAggro;
+    [SerializeField] private float debugAggroConfirmationTimer;
+
     [SerializeField] private float debugRemainingDistance;
     [SerializeField] private float debugStoppingDistance;
     [SerializeField] private float debugVelocity;
@@ -41,6 +51,10 @@ public class EnemyMovement : MonoBehaviour
 
     [SerializeField] private bool debugLastPlayerSampleSuccess;
     [SerializeField] private bool debugLastPlayerDestinationAccepted;
+
+    [SerializeField] private string debugCurrentTarget = "CoreTower";
+    [SerializeField] private int debugTargetSwitchCount;
+    [SerializeField] private string debugLastTargetSwitch = "None";
 
     private CoreTowerHealth coreTower;
     private Collider coreTowerCollider;
@@ -56,6 +70,7 @@ public class EnemyMovement : MonoBehaviour
     private Transform currentCoreTowerSlot;
 
     private float repathTimer;
+    private float aggroConfirmationTimer;
 
     private bool hasCoreTowerDestination;
     private bool hasPlayerDestination;
@@ -99,7 +114,7 @@ public class EnemyMovement : MonoBehaviour
         agent.updateRotation = true;
 
         agent.obstacleAvoidanceType =
-            ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+            ObstacleAvoidanceType.NoObstacleAvoidance;
 
         agent.avoidancePriority =
             Random.Range(20, 81);
@@ -156,6 +171,19 @@ public class EnemyMovement : MonoBehaviour
                 "EnemyMovement: Player Collider was not found."
             );
         }
+
+        if (playerAggro != null)
+        {
+            debugAggroRadius =
+                playerAggro.AggroRadius;
+
+            debugDisengageRadius =
+                playerAggro.DisengageRadius;
+        }
+
+        aggroConfirmationTimer = 0f;
+
+        debugCurrentTarget = "CoreTower";
     }
 
     private void Update()
@@ -174,6 +202,11 @@ public class EnemyMovement : MonoBehaviour
         {
             if (!IsTargetingPlayer)
             {
+                LogTargetSwitch(
+                    "CoreTower",
+                    "Player"
+                );
+
                 ReleaseCoreTowerSlot();
 
                 IsAtTarget = false;
@@ -183,6 +216,7 @@ public class EnemyMovement : MonoBehaviour
                 agent.ResetPath();
 
                 repathTimer = 0f;
+                aggroConfirmationTimer = 0f;
             }
 
             IsTargetingPlayer = true;
@@ -194,6 +228,11 @@ public class EnemyMovement : MonoBehaviour
 
         if (IsTargetingPlayer)
         {
+            LogTargetSwitch(
+                "Player",
+                "CoreTower"
+            );
+
             IsTargetingPlayer = false;
             IsAtTarget = false;
             hasPlayerDestination = false;
@@ -202,6 +241,7 @@ public class EnemyMovement : MonoBehaviour
             agent.ResetPath();
 
             repathTimer = 0f;
+            aggroConfirmationTimer = 0f;
             hasCoreTowerDestination = false;
         }
 
@@ -219,11 +259,15 @@ public class EnemyMovement : MonoBehaviour
             playerAggro == null ||
             playerCollider == null)
         {
+            ResetAggroConfirmation();
+
             return false;
         }
 
         if (playerHealth.IsDead)
         {
+            ResetAggroConfirmation();
+
             return false;
         }
 
@@ -238,12 +282,45 @@ public class EnemyMovement : MonoBehaviour
 
         if (IsTargetingPlayer)
         {
+            ResetAggroConfirmation();
+
             return distanceToPlayer <=
                    playerAggro.DisengageRadius;
         }
 
-        return distanceToPlayer <=
-               playerAggro.AggroRadius;
+        if (distanceToPlayer >
+            playerAggro.AggroRadius)
+        {
+            ResetAggroConfirmation();
+
+            return false;
+        }
+
+        if (aggroConfirmationTime <= 0f)
+        {
+            aggroConfirmationTimer = 0f;
+
+            return true;
+        }
+
+        aggroConfirmationTimer +=
+            Time.deltaTime;
+
+        if (aggroConfirmationTimer >=
+            aggroConfirmationTime)
+        {
+            aggroConfirmationTimer =
+                aggroConfirmationTime;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void ResetAggroConfirmation()
+    {
+        aggroConfirmationTimer = 0f;
     }
 
     private void UpdatePlayerTarget()
@@ -390,12 +467,25 @@ public class EnemyMovement : MonoBehaviour
 
             IsAtTarget = false;
             hasCoreTowerDestination = false;
-            repathTimer = 0f;
+
+            if (currentCoreTowerSlot != null)
+            {
+                SetDestinationToPoint(
+                    currentCoreTowerSlot.position
+                );
+            }
         }
 
         if (currentCoreTowerSlot == null)
         {
             StopAgent();
+            return;
+        }
+
+        if (!hasCoreTowerDestination)
+        {
+            IsAtTarget = false;
+            agent.isStopped = false;
             return;
         }
 
@@ -411,17 +501,6 @@ public class EnemyMovement : MonoBehaviour
 
         IsAtTarget = false;
         agent.isStopped = false;
-
-        repathTimer -= Time.deltaTime;
-
-        if (repathTimer <= 0f)
-        {
-            SetDestinationToPoint(
-                currentCoreTowerSlot.position
-            );
-
-            repathTimer = repathInterval;
-        }
     }
 
     private bool HasReachedCoreTowerSlot()
@@ -456,16 +535,34 @@ public class EnemyMovement : MonoBehaviour
             agent.areaMask))
         {
             hasCoreTowerDestination = false;
+
+            Debug.LogWarning(
+                $"{name}: Could not find a NavMesh point " +
+                "for the assigned CoreTower slot.",
+                this
+            );
+
             return;
         }
 
         agent.stoppingDistance = 0f;
 
         bool destinationAccepted =
-            agent.SetDestination(hit.position);
+            agent.SetDestination(
+                hit.position
+            );
 
         hasCoreTowerDestination =
             destinationAccepted;
+
+        if (!destinationAccepted)
+        {
+            Debug.LogWarning(
+                $"{name}: NavMeshAgent rejected the " +
+                "CoreTower slot destination.",
+                this
+            );
+        }
     }
 
     private float GetDesiredCenterDistance(
@@ -599,6 +696,65 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
+    private void LogTargetSwitch(
+        string oldTarget,
+        string newTarget
+    )
+    {
+        float distanceToPlayer =
+            GetCurrentDistanceToPlayer();
+
+        debugTargetSwitchCount++;
+
+        debugCurrentTarget =
+            newTarget;
+
+        debugLastTargetSwitch =
+            $"{oldTarget} -> {newTarget}";
+
+        float aggroRadius =
+            playerAggro != null
+                ? playerAggro.AggroRadius
+                : 0f;
+
+        float disengageRadius =
+            playerAggro != null
+                ? playerAggro.DisengageRadius
+                : 0f;
+
+        Debug.Log(
+            $"{name}: target changed " +
+            $"{oldTarget} -> {newTarget}. " +
+            $"Distance to Player = " +
+            $"{distanceToPlayer:F2}. " +
+            $"Aggro Radius = " +
+            $"{aggroRadius:F2}. " +
+            $"Disengage Radius = " +
+            $"{disengageRadius:F2}. " +
+            $"Aggro confirmation = " +
+            $"{aggroConfirmationTime:F2}s. " +
+            $"Switch count = " +
+            $"{debugTargetSwitchCount}.",
+            this
+        );
+    }
+
+    private float GetCurrentDistanceToPlayer()
+    {
+        if (playerHealth == null)
+        {
+            return -1f;
+        }
+
+        Vector3 direction =
+            playerHealth.transform.position -
+            transform.position;
+
+        direction.y = 0f;
+
+        return direction.magnitude;
+    }
+
     private void UpdateDebugInfo()
     {
         debugIsTargetingPlayer =
@@ -609,6 +765,27 @@ public class EnemyMovement : MonoBehaviour
 
         debugHasPlayerDestination =
             hasPlayerDestination;
+
+        debugCurrentTarget =
+            IsTargetingPlayer
+                ? "Player"
+                : "CoreTower";
+
+        if (playerAggro != null)
+        {
+            debugAggroRadius =
+                playerAggro.AggroRadius;
+
+            debugDisengageRadius =
+                playerAggro.DisengageRadius;
+        }
+
+        debugAggroConfirmationTimer =
+            aggroConfirmationTimer;
+
+        debugIsConfirmingAggro =
+            !IsTargetingPlayer &&
+            aggroConfirmationTimer > 0f;
 
         if (agent == null)
         {
@@ -648,21 +825,22 @@ public class EnemyMovement : MonoBehaviour
         debugPathStatus =
             agent.pathStatus;
 
-        if (playerHealth != null)
-        {
-            Vector3 direction =
-                playerHealth.transform.position -
-                transform.position;
-
-            direction.y = 0f;
-
-            debugDistanceToPlayer =
-                direction.magnitude;
-        }
+        debugDistanceToPlayer =
+            GetCurrentDistanceToPlayer();
     }
 
     private void OnDisable()
     {
+        ResetAggroConfirmation();
         ReleaseCoreTowerSlot();
+    }
+
+    private void OnValidate()
+    {
+        aggroConfirmationTime =
+            Mathf.Max(
+                0f,
+                aggroConfirmationTime
+            );
     }
 }

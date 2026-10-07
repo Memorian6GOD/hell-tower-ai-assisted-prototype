@@ -19,7 +19,8 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0f)]
     private float permanentAttackSpeedBonusPercent = 0f;
 
-    // ���������� ������: 3% + 2 ������ = 5%.
+    // Permanent crit chance bonus in percentage points.
+    // Example: base 3% + 2 points = 5%.
     [SerializeField, Range(0f, 100f)]
     private float permanentCritChanceBonusPoints = 0f;
 
@@ -34,8 +35,8 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0)]
     private int permanentDefenseTowerMaxHealthBonus = 0;
 
-    // ����� ��������� ����� ��� ���� �������� �����.
-    // ��� �������� ��� ����������� � ������� �����.
+    // Temporary run health bonus for all defense towers.
+    // Existing towers receive it through their health system.
     private int defenseTowerRunMaxHealthBonus;
 
     public int DefenseTowerRunMaxHealthBonus =>
@@ -44,13 +45,13 @@ public class CombatStats : MonoBehaviour
     internal event System.Action<int>
         DefenseTowerRunHealthBonusAdded;
 
-    // ��������� ����� CoreTower �������� ��������.
+    // Temporary CoreTower max health bonus for the current run.
     private int coreTowerRunMaxHealthBonus;
 
     public int CoreTowerRunMaxHealthBonus =>
         coreTowerRunMaxHealthBonus;
 
-    // ���� ����� ���������� ������ �� ����� �������� ������.
+    // Temporary hero max health bonus for the current run.
     private int heroRunMaxHealthBonus;
 
     public int HeroRunMaxHealthBonus =>
@@ -70,8 +71,8 @@ public class CombatStats : MonoBehaviour
     [SerializeField, Min(0f)]
     private float towerAttackSpeedBonusPercent = 0f;
 
-    // ������������� ��������:
-    // ���������� ���� 5% � ������� 20% ��� 6%.
+    // Relative run bonus.
+    // Example: permanent crit chance 5% with +20% run bonus = 6%.
     [SerializeField, Min(0f)]
     private float heroCritChanceBonusPercent = 0f;
 
@@ -80,6 +81,9 @@ public class CombatStats : MonoBehaviour
 
     public float HeroRunAttackSpeedBonusPercent =>
         Mathf.Max(0f, heroAttackSpeedBonusPercent);
+
+    public float HeroRunCritChanceBonusPercent =>
+        Mathf.Max(0f, heroCritChanceBonusPercent);
 
     public float TowerRunDamageBonusPercent =>
         Mathf.Max(0f, towerDamageBonusPercent);
@@ -410,6 +414,17 @@ public class CombatStats : MonoBehaviour
             ref heroAttackSpeedBonusPercent,
             amount,
             "hero attack speed"
+        );
+    }
+
+    public bool TryAddHeroRunCritChanceBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref heroCritChanceBonusPercent,
+            amount,
+            "hero critical chance"
         );
     }
 
@@ -835,6 +850,8 @@ public class CombatStats : MonoBehaviour
             $"{Mathf.Max(0f, permanentCritChanceBonusPoints):F2} point(s) | " +
             $"Permanent crit chance: " +
             $"{HeroPermanentCritChancePercent:F2}% | " +
+            $"Run crit bonus: " +
+            $"{HeroRunCritChanceBonusPercent:F2}% | " +
             $"Final crit chance: " +
             $"{HeroCritChancePercent:F2}% | " +
             $"Crit damage multiplier: " +

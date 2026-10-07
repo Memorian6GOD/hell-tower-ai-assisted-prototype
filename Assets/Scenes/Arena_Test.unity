@@ -820,17 +820,14 @@ MonoBehaviour:
     damageMultiplier: 1
     enemyGroups:
     - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 14
-      spawnInterval: 1.3
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 24
+      enemyCount: 5
       spawnInterval: 1.3
   - waveName: Wave 2
     healthMultiplier: 1
     damageMultiplier: 1
     enemyGroups:
     - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 6
+      enemyCount: 7
       spawnInterval: 1.3
   - waveName: Wave 3
     healthMultiplier: 1
@@ -3085,6 +3082,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RunUpgradeManager
   combatStats: {fileID: 1295724593}
   playerProgression: {fileID: 1295724595}
+  playerHealth: {fileID: 2079961573}
+  playerAttack: {fileID: 0}
   unlockHeroLevel: 2
   offeredOptionCount: 2
   upgradeDefinitions:
@@ -3108,12 +3107,98 @@ MonoBehaviour:
     description: Increases defense tower attack speed by 10%.
     bonusPercent: 10
     maximumStacks: 3
+  - upgradeType: 4
+    displayName: POWERFUL DAMAGE
+    description: +20% hero damage
+    bonusPercent: 20
+    maximumStacks: 2
+  - upgradeType: 5
+    displayName: RAPID ATTACK
+    description: +20% hero attack speed
+    bonusPercent: 20
+    maximumStacks: 2
+  - upgradeType: 6
+    displayName: POWERFUL TOWER
+    description: Increases defense tower damage by 20%.
+    bonusPercent: 20
+    maximumStacks: 2
+  - upgradeType: 7
+    displayName: RAPID TOWER
+    description: Increases defense tower attack speed by 20%.
+    bonusPercent: 20
+    maximumStacks: 2
+  - upgradeType: 8
+    displayName: CRITICAL CHANCE
+    description: Increases hero critical chance.
+    bonusPercent: 20
+    maximumStacks: 3
+  - upgradeType: 9
+    displayName: DEADLY PRECISION
+    description: Greatly increases hero critical chance.
+    bonusPercent: 40
+    maximumStacks: 2
+  - upgradeType: 10
+    displayName: VITALITY
+    description: Increases hero maximum health.
+    bonusPercent: 7
+    maximumStacks: 3
+  - upgradeType: 11
+    displayName: GREATER VITALITY
+    description: Greatly increases hero maximum health.
+    bonusPercent: 15
+    maximumStacks: 2
+  - upgradeType: 12
+    displayName: DOUBLE SHOT
+    description: Fires two projectiles at the same target. Each projectile deals
+      reduced damage and the attack takes longer to prepare.
+    bonusPercent: 85
+    maximumStacks: 1
+  - upgradeType: 13
+    displayName: RICOCHET
+    description: Projectiles bounce to additional enemies. Further stacks improve
+      the number of targets and ricochet damage.
+    bonusPercent: 33
+    maximumStacks: 3
+  - upgradeType: 14
+    displayName: POISON
+    description: Projectile hits can poison enemies and deal damage over time. Ricochet
+      hits have a lower chance to apply poison.
+    bonusPercent: 50
+    maximumStacks: 1
+  - upgradeType: 15
+    displayName: STUN
+    description: Projectile hits can briefly stop enemies. A second stack increases
+      the stun duration.
+    bonusPercent: 20
+    maximumStacks: 2
+  - upgradeType: 16
+    displayName: SLOW
+    description: Projectile hits slow enemy movement. A second stack increases the
+      movement reduction.
+    bonusPercent: 15
+    maximumStacks: 2
+  useDebugTestPool: 0
+  debugTestCategory: 0
+  debugTestUpgradeTypes: 100000000f000000
   selectionInProgress: 0
   debugCurrentCategory: 0
   debugHeroDamageStacks: 0
   debugHeroAttackSpeedStacks: 0
   debugTowerDamageStacks: 0
   debugTowerAttackSpeedStacks: 0
+  debugHeroDamageStrongStacks: 0
+  debugHeroAttackSpeedStrongStacks: 0
+  debugTowerDamageStrongStacks: 0
+  debugTowerAttackSpeedStrongStacks: 0
+  debugHeroCritStacks: 0
+  debugHeroCritStrongStacks: 0
+  debugHeroHealthStacks: 0
+  debugHeroHealthStrongStacks: 0
+  debugHeroDoubleShotStacks: 0
+  debugHeroRicochetStacks: 0
+  debugHeroPoisonStacks: 0
+  debugHeroStunStacks: 0
+  debugHeroSlowStacks: 0
   debugAvailableUpgradeCount: 0
 --- !u!114 &1295724597
 MonoBehaviour:
@@ -4926,6 +5011,14 @@ PrefabInstance:
     - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: logShotDamage
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: stunPrimaryApplyChance
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: stunRicochetApplyChance
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: 3789112264732311825, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: m_Name

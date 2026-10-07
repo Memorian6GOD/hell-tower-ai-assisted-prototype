@@ -22,3 +22,7 @@ MonoBehaviour:
   heroAttackSpeedPercentPerPurchase: 2
   heroAttackSpeedStartingPrice: 100
   heroAttackSpeedPriceIncreasePerPurchase: 75
+  sharedMaxHealthPurchasesPerHeroLevel: 5
+  sharedMaxHealthPercentPerPurchase: 5
+  sharedMaxHealthStartingPrice: 100
+  sharedMaxHealthPriceIncreasePerPurchase: 75

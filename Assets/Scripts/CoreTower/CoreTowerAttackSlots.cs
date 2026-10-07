@@ -1,40 +1,98 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class CoreTowerAttackSlots : MonoBehaviour
 {
     [Header("Melee Attack Slots")]
-    [SerializeField] private Transform[] attackSlots;
+    [SerializeField]
+    private Transform[] attackSlots;
 
     [Header("Editor Layout Settings")]
 
-    [Tooltip("ќбъект, относительно которого располагаютс€ слоты.")]
-    [SerializeField] private Transform slotsRoot;
+    [Tooltip(
+        "Object relative to which melee slots are arranged."
+    )]
+    [SerializeField]
+    private Transform slotsRoot;
 
-    [Tooltip("Ќеобходимое количество ближних слотов.")]
-    [SerializeField, Min(1)] private int desiredSlotCount = 14;
+    [Tooltip(
+        "Required number of melee attack slots."
+    )]
+    [SerializeField, Min(1)]
+    private int desiredSlotCount = 14;
 
-    [Tooltip("ќсновное рассто€ние всех ближних слотов от башни.")]
-    [SerializeField, Min(0.1f)] private float slotRadius = 4f;
+    [Tooltip(
+        "Base distance of melee slots from the CoreTower."
+    )]
+    [SerializeField, Min(0.1f)]
+    private float slotRadius = 4f;
 
-    [Tooltip("ќбщий угол дуги со слотами.")]
-    [SerializeField, Range(10f, 360f)] private float arcAngle = 180f;
+    [Tooltip(
+        "Total angle of the melee slot arc."
+    )]
+    [SerializeField, Range(10f, 360f)]
+    private float arcAngle = 180f;
 
-    [Tooltip("Ќаправление центра дуги относительно поворота Slots Root.")]
-    [SerializeField, Range(-180f, 180f)] private float arcCenterAngle = 180f;
+    [Tooltip(
+        "Direction of the arc center relative to Slots Root."
+    )]
+    [SerializeField, Range(-180f, 180f)]
+    private float arcCenterAngle = 180f;
 
-    [Tooltip("¬ысота слотов относительно Slots Root.")]
-    [SerializeField] private float slotHeight = 0f;
+    [Tooltip(
+        "Vertical position of slots relative to Slots Root."
+    )]
+    [SerializeField]
+    private float slotHeight = 0f;
 
     [Header("Additional Radius Settings")]
 
-    [Tooltip("ѕервый слот, который нужно дополнительно отодвинуть.")]
-    [SerializeField, Min(1)] private int extraRadiusStartSlot = 5;
+    [Tooltip(
+        "First slot that receives additional radius."
+    )]
+    [SerializeField, Min(1)]
+    private int extraRadiusStartSlot = 5;
 
-    [Tooltip("ѕоследний слот, который нужно дополнительно отодвинуть.")]
-    [SerializeField, Min(1)] private int extraRadiusEndSlot = 12;
+    [Tooltip(
+        "Last slot that receives additional radius."
+    )]
+    [SerializeField, Min(1)]
+    private int extraRadiusEndSlot = 12;
 
-    [Tooltip("Ќа сколько дополнительно отодвигаютс€ выбранные слоты.")]
-    [SerializeField, Min(0f)] private float extraRadius = 0.6f;
+    [Tooltip(
+        "Additional distance applied to selected slots."
+    )]
+    [SerializeField, Min(0f)]
+    private float extraRadius = 0.6f;
+
+    [Header("NavMesh Slot Selection")]
+
+    [Tooltip(
+        "Maximum distance used to find a NavMesh point " +
+        "near an attack slot."
+    )]
+    [SerializeField, Min(0.1f)]
+    private float slotNavMeshSampleDistance = 1.5f;
+
+    [Header("Debug - Do Not Edit")]
+
+    [SerializeField]
+    private int debugTotalSlotCount;
+
+    [SerializeField]
+    private int debugFreeSlotCount;
+
+    [SerializeField]
+    private int debugReachableSlotCount;
+
+    [SerializeField]
+    private int debugRejectedSlotCount;
+
+    [SerializeField]
+    private string debugLastClaimedSlot = "None";
+
+    [SerializeField]
+    private float debugLastPathLength;
 
     private EnemyMovement[] occupants;
 
@@ -47,7 +105,10 @@ public class CoreTowerAttackSlots : MonoBehaviour
             slotCount = attackSlots.Length;
         }
 
-        occupants = new EnemyMovement[slotCount];
+        occupants =
+            new EnemyMovement[slotCount];
+
+        RefreshDebugSlotCounts();
     }
 
     [ContextMenu("Create And Arrange Melee Slots")]
@@ -56,8 +117,8 @@ public class CoreTowerAttackSlots : MonoBehaviour
         if (Application.isPlaying)
         {
             Debug.LogWarning(
-                "CoreTowerAttackSlots: Slots can only be created " +
-                "outside Play Mode."
+                "CoreTowerAttackSlots: Slots can only be " +
+                "created outside Play Mode."
             );
 
             return;
@@ -69,17 +130,22 @@ public class CoreTowerAttackSlots : MonoBehaviour
                 : transform;
 
         Transform[] previousSlots =
-            attackSlots ?? new Transform[0];
+            attackSlots ??
+            new Transform[0];
 
         Transform[] newSlots =
             new Transform[desiredSlotCount];
 
-        for (int i = 0; i < desiredSlotCount; i++)
+        for (int i = 0;
+             i < desiredSlotCount;
+             i++)
         {
             if (i < previousSlots.Length &&
                 previousSlots[i] != null)
             {
-                newSlots[i] = previousSlots[i];
+                newSlots[i] =
+                    previousSlots[i];
+
                 continue;
             }
 
@@ -93,7 +159,8 @@ public class CoreTowerAttackSlots : MonoBehaviour
                 false
             );
 
-            newSlots[i] = slotObject.transform;
+            newSlots[i] =
+                slotObject.transform;
         }
 
         attackSlots = newSlots;
@@ -101,8 +168,9 @@ public class CoreTowerAttackSlots : MonoBehaviour
         ArrangeMeleeSlots();
 
         Debug.Log(
-            $"CoreTowerAttackSlots: {attackSlots.Length} " +
-            "melee slots created and arranged."
+            $"CoreTowerAttackSlots: " +
+            $"{attackSlots.Length} melee slots " +
+            "created and arranged."
         );
     }
 
@@ -112,8 +180,8 @@ public class CoreTowerAttackSlots : MonoBehaviour
         if (Application.isPlaying)
         {
             Debug.LogWarning(
-                "CoreTowerAttackSlots: Slots can only be arranged " +
-                "outside Play Mode."
+                "CoreTowerAttackSlots: Slots can only be " +
+                "arranged outside Play Mode."
             );
 
             return;
@@ -123,7 +191,8 @@ public class CoreTowerAttackSlots : MonoBehaviour
             attackSlots.Length == 0)
         {
             Debug.LogWarning(
-                "CoreTowerAttackSlots: There are no melee slots to arrange."
+                "CoreTowerAttackSlots: There are no " +
+                "melee slots to arrange."
             );
 
             return;
@@ -134,7 +203,9 @@ public class CoreTowerAttackSlots : MonoBehaviour
                 ? slotsRoot
                 : transform;
 
-        for (int i = 0; i < attackSlots.Length; i++)
+        for (int i = 0;
+             i < attackSlots.Length;
+             i++)
         {
             if (attackSlots[i] == null)
             {
@@ -158,35 +229,42 @@ public class CoreTowerAttackSlots : MonoBehaviour
             float angleInRadians =
                 angle * Mathf.Deg2Rad;
 
-            // ¬ массиве нумераци€ начинаетс€ с нул€,
-            // а в Inspector и названи€х слотов Ч с единицы.
-            int slotNumber = i + 1;
+            int slotNumber =
+                i + 1;
 
-            float currentRadius = slotRadius;
+            float currentRadius =
+                slotRadius;
 
-            // “олько выбранный диапазон слотов
-            // получает дополнительное рассто€ние от башни.
-            if (slotNumber >= extraRadiusStartSlot &&
-                slotNumber <= extraRadiusEndSlot)
+            if (slotNumber >=
+                    extraRadiusStartSlot &&
+                slotNumber <=
+                    extraRadiusEndSlot)
             {
-                currentRadius += extraRadius;
+                currentRadius +=
+                    extraRadius;
             }
 
             Vector3 localPosition =
                 new Vector3(
-                    Mathf.Sin(angleInRadians) * currentRadius,
+                    Mathf.Sin(
+                        angleInRadians
+                    ) * currentRadius,
                     slotHeight,
-                    Mathf.Cos(angleInRadians) * currentRadius
+                    Mathf.Cos(
+                        angleInRadians
+                    ) * currentRadius
                 );
 
-            // TransformPoint переводит локальную позицию
-            // в мировую с учЄтом положени€ и поворота Slots Root.
             attackSlots[i].position =
-                root.TransformPoint(localPosition);
+                root.TransformPoint(
+                    localPosition
+                );
         }
     }
 
-    public Transform ClaimClosestSlot(EnemyMovement enemy)
+    public Transform ClaimClosestSlot(
+        EnemyMovement enemy
+    )
     {
         if (enemy == null ||
             attackSlots == null ||
@@ -196,9 +274,11 @@ public class CoreTowerAttackSlots : MonoBehaviour
             return null;
         }
 
-        // ≈сли этот враг уже занимал слот,
-        // возвращаем ему тот же самый слот.
-        for (int i = 0; i < occupants.Length; i++)
+        // If this enemy already owns a slot,
+        // keep returning the same slot.
+        for (int i = 0;
+             i < occupants.Length;
+             i++)
         {
             if (occupants[i] == enemy)
             {
@@ -206,12 +286,41 @@ public class CoreTowerAttackSlots : MonoBehaviour
             }
         }
 
-        int closestSlotIndex = -1;
-        float closestDistance = float.MaxValue;
+        NavMeshAgent enemyAgent =
+            enemy.GetComponent<NavMeshAgent>();
 
-        for (int i = 0; i < attackSlots.Length; i++)
+        if (enemyAgent == null ||
+            !enemyAgent.isOnNavMesh)
         {
-            if (attackSlots[i] == null)
+            Debug.LogWarning(
+                "CoreTowerAttackSlots: Enemy has no " +
+                "usable NavMeshAgent.",
+                enemy
+            );
+
+            return null;
+        }
+
+        int freeSlotCount = 0;
+        int reachableSlotCount = 0;
+        int rejectedSlotCount = 0;
+
+        int bestSlotIndex = -1;
+
+        float bestPathLength =
+            float.MaxValue;
+
+        NavMeshPath path =
+            new NavMeshPath();
+
+        for (int i = 0;
+             i < attackSlots.Length;
+             i++)
+        {
+            Transform slot =
+                attackSlots[i];
+
+            if (slot == null)
             {
                 continue;
             }
@@ -221,33 +330,125 @@ public class CoreTowerAttackSlots : MonoBehaviour
                 continue;
             }
 
-            Vector3 direction =
-                attackSlots[i].position -
-                enemy.transform.position;
+            freeSlotCount++;
 
-            direction.y = 0f;
+            bool sampleSucceeded =
+                NavMesh.SamplePosition(
+                    slot.position,
+                    out NavMeshHit slotHit,
+                    slotNavMeshSampleDistance,
+                    enemyAgent.areaMask
+                );
 
-            float distance =
-                direction.sqrMagnitude;
-
-            if (distance < closestDistance)
+            if (!sampleSucceeded)
             {
-                closestDistance = distance;
-                closestSlotIndex = i;
+                rejectedSlotCount++;
+                continue;
+            }
+
+            bool pathCalculated =
+                NavMesh.CalculatePath(
+                    enemyAgent.transform.position,
+                    slotHit.position,
+                    enemyAgent.areaMask,
+                    path
+                );
+
+            if (!pathCalculated ||
+                path.status !=
+                NavMeshPathStatus.PathComplete)
+            {
+                rejectedSlotCount++;
+                continue;
+            }
+
+            float pathLength =
+                CalculatePathLength(path);
+
+            if (float.IsInfinity(pathLength) ||
+                float.IsNaN(pathLength))
+            {
+                rejectedSlotCount++;
+                continue;
+            }
+
+            reachableSlotCount++;
+
+            if (pathLength <
+                bestPathLength)
+            {
+                bestPathLength =
+                    pathLength;
+
+                bestSlotIndex =
+                    i;
             }
         }
 
-        if (closestSlotIndex == -1)
+        debugTotalSlotCount =
+            attackSlots.Length;
+
+        debugFreeSlotCount =
+            freeSlotCount;
+
+        debugReachableSlotCount =
+            reachableSlotCount;
+
+        debugRejectedSlotCount =
+            rejectedSlotCount;
+
+        if (bestSlotIndex == -1)
         {
+            debugLastClaimedSlot =
+                "None";
+
+            debugLastPathLength =
+                0f;
+
+            Debug.LogWarning(
+                "CoreTowerAttackSlots: No reachable " +
+                $"free melee slot found for {enemy.name}. " +
+                $"Free: {freeSlotCount}, " +
+                $"reachable: {reachableSlotCount}, " +
+                $"rejected: {rejectedSlotCount}.",
+                enemy
+            );
+
             return null;
         }
 
-        occupants[closestSlotIndex] = enemy;
+        occupants[bestSlotIndex] =
+            enemy;
 
-        return attackSlots[closestSlotIndex];
+        debugLastClaimedSlot =
+            attackSlots[
+                bestSlotIndex
+            ].name;
+
+        debugLastPathLength =
+            bestPathLength;
+
+        RefreshDebugSlotCounts();
+
+        Debug.Log(
+            "CoreTowerAttackSlots: " +
+            $"{enemy.name} claimed " +
+            $"'{debugLastClaimedSlot}'. " +
+            $"NavMesh path length: " +
+            $"{bestPathLength:F2}. " +
+            $"Reachable free slots checked: " +
+            $"{reachableSlotCount}.",
+            enemy
+        );
+
+        return attackSlots[
+            bestSlotIndex
+        ];
     }
 
-    public void ReleaseSlot(EnemyMovement enemy)
+    public void ReleaseSlot(
+        EnemyMovement enemy
+    )
     {
         if (enemy == null ||
             occupants == null)
@@ -255,13 +456,122 @@ public class CoreTowerAttackSlots : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < occupants.Length; i++)
+        for (int i = 0;
+             i < occupants.Length;
+             i++)
         {
-            if (occupants[i] == enemy)
+            if (occupants[i] != enemy)
             {
-                occupants[i] = null;
-                return;
+                continue;
+            }
+
+            occupants[i] = null;
+
+            RefreshDebugSlotCounts();
+
+            return;
+        }
+    }
+
+    private float CalculatePathLength(
+        NavMeshPath path
+    )
+    {
+        if (path == null ||
+            path.corners == null ||
+            path.corners.Length < 2)
+        {
+            return 0f;
+        }
+
+        float totalLength = 0f;
+
+        for (int i = 1;
+             i < path.corners.Length;
+             i++)
+        {
+            totalLength +=
+                Vector3.Distance(
+                    path.corners[i - 1],
+                    path.corners[i]
+                );
+        }
+
+        return totalLength;
+    }
+
+    private void RefreshDebugSlotCounts()
+    {
+        if (attackSlots == null)
+        {
+            debugTotalSlotCount = 0;
+            debugFreeSlotCount = 0;
+            return;
+        }
+
+        debugTotalSlotCount =
+            attackSlots.Length;
+
+        if (occupants == null)
+        {
+            debugFreeSlotCount =
+                attackSlots.Length;
+
+            return;
+        }
+
+        int freeCount = 0;
+
+        for (int i = 0;
+             i < occupants.Length;
+             i++)
+        {
+            if (occupants[i] == null)
+            {
+                freeCount++;
             }
         }
+
+        debugFreeSlotCount =
+            freeCount;
+    }
+
+    private void OnValidate()
+    {
+        desiredSlotCount =
+            Mathf.Max(
+                1,
+                desiredSlotCount
+            );
+
+        slotRadius =
+            Mathf.Max(
+                0.1f,
+                slotRadius
+            );
+
+        extraRadiusStartSlot =
+            Mathf.Max(
+                1,
+                extraRadiusStartSlot
+            );
+
+        extraRadiusEndSlot =
+            Mathf.Max(
+                extraRadiusStartSlot,
+                extraRadiusEndSlot
+            );
+
+        extraRadius =
+            Mathf.Max(
+                0f,
+                extraRadius
+            );
+
+        slotNavMeshSampleDistance =
+            Mathf.Max(
+                0.1f,
+                slotNavMeshSampleDistance
+            );
     }
 }

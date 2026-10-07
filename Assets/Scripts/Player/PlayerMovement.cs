@@ -16,50 +16,71 @@ public class PlayerMovement : MonoBehaviour
 
     private float verticalVelocity;
 
+    public bool WantsToMove { get; private set; }
     public bool IsMoving { get; private set; }
 
-    void Start()
+    private void Start()
     {
-        characterController = GetComponent<CharacterController>();
-        playerHealth = GetComponent<PlayerHealth>();
+        characterController =
+            GetComponent<CharacterController>();
+
+        playerHealth =
+            GetComponent<PlayerHealth>();
     }
 
-    void Update()
+    private void Update()
     {
-        if (playerHealth != null && playerHealth.IsDead)
+        if (playerHealth != null &&
+            playerHealth.IsDead)
         {
+            WantsToMove = false;
             IsMoving = false;
+
             return;
         }
 
         if (Keyboard.current == null)
         {
+            WantsToMove = false;
+            IsMoving = false;
+
             return;
         }
 
-        Vector3 moveDirection = Vector3.zero;
+        Vector3 moveDirection =
+            Vector3.zero;
 
         if (Keyboard.current.wKey.isPressed)
+        {
             moveDirection.z += 1f;
+        }
 
         if (Keyboard.current.sKey.isPressed)
+        {
             moveDirection.z -= 1f;
+        }
 
         if (Keyboard.current.aKey.isPressed)
+        {
             moveDirection.x -= 1f;
+        }
 
         if (Keyboard.current.dKey.isPressed)
+        {
             moveDirection.x += 1f;
+        }
 
-        moveDirection = moveDirection.normalized;
+        moveDirection =
+            moveDirection.normalized;
 
-        bool wantsToMove =
+        WantsToMove =
             moveDirection.sqrMagnitude > 0.01f;
 
-        if (wantsToMove &&
+        if (WantsToMove &&
             IsEnemyBlockingMovement(moveDirection))
         {
-            moveDirection = Vector3.zero;
+            moveDirection =
+                Vector3.zero;
         }
 
         IsMoving =
@@ -75,8 +96,8 @@ public class PlayerMovement : MonoBehaviour
             gravity * Time.deltaTime;
 
         Vector3 finalMovement =
-            moveDirection * moveSpeed
-            + Vector3.up * verticalVelocity;
+            moveDirection * moveSpeed +
+            Vector3.up * verticalVelocity;
 
         characterController.Move(
             finalMovement * Time.deltaTime
@@ -121,8 +142,8 @@ public class PlayerMovement : MonoBehaviour
             Vector3.up * halfCapsule;
 
         float movementDistance =
-            moveSpeed * Time.deltaTime
-            + enemyCheckDistance;
+            moveSpeed * Time.deltaTime +
+            enemyCheckDistance;
 
         return Physics.CapsuleCast(
             point1,
