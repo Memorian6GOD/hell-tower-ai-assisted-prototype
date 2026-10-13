@@ -71,6 +71,8 @@ MonoBehaviour:
     moveSpeed: 1.5
     attackInterval: 1.5
     attackWindup: 0.6
+  siegeDefenseTowerDamageMultiplier: 1
+  siegeCoreTowerDamageMultiplier: 1
   firstBossCore:
     baseMaxHealth: 550
     moveSpeed: 2
