@@ -817,7 +817,7 @@ MonoBehaviour:
   meleeEnemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
   rangedEnemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
   strongEnemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
-  siegeEnemyPrefab: {fileID: 0}
+  siegeEnemyPrefab: {fileID: 7433334293409252831, guid: fe0a009977a0d4e4bb6e5e1620fff996, type: 3}
   bossPrefab: {fileID: 4860089283288767153, guid: 91b0421aa9ede0d44bb056b0f84b0ae7, type: 3}
 --- !u!4 &329377296
 Transform:
