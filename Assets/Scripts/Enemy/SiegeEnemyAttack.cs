@@ -47,7 +47,15 @@ public class SiegeEnemyAttack : MonoBehaviour
 
     private SiegeEnemyMovement siegeMovement;
 
+    [Header("Target Damage Multipliers")]
+    [SerializeField, Min(0.01f)]
+    private float defenseTowerDamageMultiplier = 1f;
+
+    [SerializeField, Min(0.01f)]
+    private float coreTowerDamageMultiplier = 1f;
+
     private float attackTimer;
+    private Object currentAttackTarget;
 
     private bool attackAnimationStarted;
     private bool damageMultiplierApplied;
@@ -99,6 +107,18 @@ public class SiegeEnemyAttack : MonoBehaviour
         return true;
     }
 
+
+    public bool ConfigureTargetDamageMultipliers(float defenseMultiplier, float coreMultiplier)
+    {
+        if (hasStarted || defenseMultiplier <= 0f || coreMultiplier <= 0f)
+        {
+            return false;
+        }
+
+        defenseTowerDamageMultiplier = defenseMultiplier;
+        coreTowerDamageMultiplier = coreMultiplier;
+        return true;
+    }
 
     // =========================================================
     // UNITY
@@ -158,6 +178,16 @@ public class SiegeEnemyAttack : MonoBehaviour
             );
 
             return;
+        }
+
+        Object selectedTarget = siegeMovement.IsTargetingDefenseTower
+            ? (Object)siegeMovement.CurrentDefenseTower
+            : siegeMovement.CurrentCoreTower;
+
+        if (currentAttackTarget != selectedTarget)
+        {
+            ResetAttackCycle();
+            currentAttackTarget = selectedTarget;
         }
 
         attackTimer -=
@@ -321,13 +351,12 @@ public class SiegeEnemyAttack : MonoBehaviour
             " attacks " +
             defenseTower.gameObject.name +
             " for " +
-            attackDamage +
+            Mathf.Max(1, Mathf.CeilToInt(attackDamage * defenseTowerDamageMultiplier)) +
             " damage."
         );
 
-        defenseTower.TakeDamage(
-            attackDamage
-        );
+        int finalDamage = Mathf.Max(1, Mathf.CeilToInt(attackDamage * defenseTowerDamageMultiplier));
+        defenseTower.TakeDamage(finalDamage);
 
         SpawnHitEffect(
             hitPosition
@@ -358,13 +387,12 @@ public class SiegeEnemyAttack : MonoBehaviour
         Debug.Log(
             gameObject.name +
             " attacks Core Tower for " +
-            attackDamage +
+            Mathf.Max(1, Mathf.CeilToInt(attackDamage * coreTowerDamageMultiplier)) +
             " damage."
         );
 
-        coreTower.TakeDamage(
-            attackDamage
-        );
+        int finalDamage = Mathf.Max(1, Mathf.CeilToInt(attackDamage * coreTowerDamageMultiplier));
+        coreTower.TakeDamage(finalDamage);
 
         SpawnHitEffect(
             hitPosition
@@ -437,6 +465,7 @@ public class SiegeEnemyAttack : MonoBehaviour
 
     private void ResetAttackCycle()
     {
+        currentAttackTarget = null;
         attackTimer =
             attackWindup;
 
@@ -517,6 +546,7 @@ public class SiegeEnemyAttack : MonoBehaviour
 
     private void OnDisable()
     {
+        ResetAttackCycle();
         if (attackAnimation != null)
         {
             attackAnimation.ResetAnimation();
