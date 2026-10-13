@@ -868,9 +868,14 @@ public class GameBalanceConfig : ScriptableObject
     public EnemyBalanceValues StrongEnemy => strongEnemy;
     public EnemyBalanceValues SiegeEnemy => siegeEnemy;
     public float SiegeDefenseTowerDamageMultiplier =>
-        Mathf.Max(0.01f, siegeDefenseTowerDamageMultiplier);
+        siegeDefenseTowerDamageMultiplier > 0f
+            ? siegeDefenseTowerDamageMultiplier
+            : 1f;
+
     public float SiegeCoreTowerDamageMultiplier =>
-        Mathf.Max(0.01f, siegeCoreTowerDamageMultiplier);
+        siegeCoreTowerDamageMultiplier > 0f
+            ? siegeCoreTowerDamageMultiplier
+            : 1f;
 
     public BossCoreBalanceValues FirstBossCore => firstBossCore;
     public BossAttackPayloadBalanceValues FirstBossAttacks => firstBossAttacks;
@@ -1204,11 +1209,15 @@ public class GameBalanceConfig : ScriptableObject
         strongEnemy?.Validate();
         siegeEnemy?.Validate();
 
-        siegeDefenseTowerDamageMultiplier =
-            Mathf.Max(0.01f, siegeDefenseTowerDamageMultiplier);
+        if (siegeDefenseTowerDamageMultiplier <= 0f)
+        {
+            siegeDefenseTowerDamageMultiplier = 1f;
+        }
 
-        siegeCoreTowerDamageMultiplier =
-            Mathf.Max(0.01f, siegeCoreTowerDamageMultiplier);
+        if (siegeCoreTowerDamageMultiplier <= 0f)
+        {
+            siegeCoreTowerDamageMultiplier = 1f;
+        }
 
         EnsureFirstBossCoreBalance();
         EnsureFirstBossAttackPayloadBalance();
