@@ -359,6 +359,21 @@ public class EnemyBalanceBinder : MonoBehaviour
                 this
             );
         }
+
+        bool multipliersConfigured =
+            siegeAttack.ConfigureTargetDamageMultipliers(
+                balanceConfig.SiegeDefenseTowerDamageMultiplier,
+                balanceConfig.SiegeCoreTowerDamageMultiplier
+            );
+
+        if (!multipliersConfigured)
+        {
+            Debug.LogError(
+                "EnemyBalanceBinder: Could not apply " +
+                "siege target damage multipliers.",
+                this
+            );
+        }
     }
 
 
