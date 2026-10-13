@@ -762,6 +762,12 @@ public class GameBalanceConfig : ScriptableObject
     private EnemyBalanceValues siegeEnemy =
         new EnemyBalanceValues(100, 50, 1.5f, 1.5f, 0.6f);
 
+    [SerializeField, Min(0.01f)]
+    private float siegeDefenseTowerDamageMultiplier = 1f;
+
+    [SerializeField, Min(0.01f)]
+    private float siegeCoreTowerDamageMultiplier = 1f;
+
     [Header("Boss - First Boss Core & Controller")]
     [SerializeField]
     private BossCoreBalanceValues firstBossCore =
@@ -861,6 +867,10 @@ public class GameBalanceConfig : ScriptableObject
     public float RangedEnemyProjectileSpeed => Mathf.Max(0.01f, rangedEnemyProjectileSpeed);
     public EnemyBalanceValues StrongEnemy => strongEnemy;
     public EnemyBalanceValues SiegeEnemy => siegeEnemy;
+    public float SiegeDefenseTowerDamageMultiplier =>
+        Mathf.Max(0.01f, siegeDefenseTowerDamageMultiplier);
+    public float SiegeCoreTowerDamageMultiplier =>
+        Mathf.Max(0.01f, siegeCoreTowerDamageMultiplier);
 
     public BossCoreBalanceValues FirstBossCore => firstBossCore;
     public BossAttackPayloadBalanceValues FirstBossAttacks => firstBossAttacks;
@@ -1193,6 +1203,12 @@ public class GameBalanceConfig : ScriptableObject
         rangedEnemy?.Validate();
         strongEnemy?.Validate();
         siegeEnemy?.Validate();
+
+        siegeDefenseTowerDamageMultiplier =
+            Mathf.Max(0.01f, siegeDefenseTowerDamageMultiplier);
+
+        siegeCoreTowerDamageMultiplier =
+            Mathf.Max(0.01f, siegeCoreTowerDamageMultiplier);
 
         EnsureFirstBossCoreBalance();
         EnsureFirstBossAttackPayloadBalance();
