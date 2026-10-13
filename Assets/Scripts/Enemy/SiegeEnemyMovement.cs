@@ -351,8 +351,11 @@ public class SiegeEnemyMovement : MonoBehaviour
         Collider nearestTowerCollider =
             null;
 
-        float nearestDistanceSqr =
+        float nearestPathDistance =
             float.MaxValue;
+
+        NavMeshPath candidatePath =
+            new NavMeshPath();
 
         foreach (
             DefenseTowerHealth tower
@@ -379,26 +382,38 @@ public class SiegeEnemyMovement : MonoBehaviour
                 continue;
             }
 
-            Vector3 closestPoint =
-                towerCollider.ClosestPoint(
-                    transform.position
+            if (!TryGetApproachPosition(
+                    towerCollider,
+                    out Vector3 approachPosition
+                ))
+            {
+                continue;
+            }
+
+            if (!agent.CalculatePath(
+                    approachPosition,
+                    candidatePath
+                ))
+            {
+                continue;
+            }
+
+            if (candidatePath.status !=
+                NavMeshPathStatus.PathComplete)
+            {
+                continue;
+            }
+
+            float pathDistance =
+                GetPathDistance(
+                    candidatePath
                 );
 
-            Vector3 direction =
-                closestPoint -
-                transform.position;
-
-            direction.y =
-                0f;
-
-            float distanceSqr =
-                direction.sqrMagnitude;
-
-            if (distanceSqr <
-                nearestDistanceSqr)
+            if (pathDistance <
+                nearestPathDistance)
             {
-                nearestDistanceSqr =
-                    distanceSqr;
+                nearestPathDistance =
+                    pathDistance;
 
                 nearestTower =
                     tower;
@@ -605,6 +620,40 @@ public class SiegeEnemyMovement : MonoBehaviour
         Collider targetCollider
     )
     {
+        if (!TryGetApproachPosition(
+                targetCollider,
+                out Vector3 approachPosition
+            ))
+        {
+            agent.ResetPath();
+            return;
+        }
+
+        agent.stoppingDistance =
+            arrivalTolerance;
+
+        if (!agent.SetDestination(
+                approachPosition
+            ))
+        {
+            agent.ResetPath();
+        }
+    }
+
+
+    private bool TryGetApproachPosition(
+        Collider targetCollider,
+        out Vector3 approachPosition
+    )
+    {
+        approachPosition =
+            transform.position;
+
+        if (targetCollider == null)
+        {
+            return false;
+        }
+
         Vector3 closestPoint =
             targetCollider.ClosestPoint(
                 transform.position
@@ -652,16 +701,44 @@ public class SiegeEnemyMovement : MonoBehaviour
                 agent.areaMask
             ))
         {
-            agent.ResetPath();
-            return;
+            return false;
         }
 
-        agent.stoppingDistance =
-            arrivalTolerance;
+        approachPosition =
+            hit.position;
 
-        agent.SetDestination(
-            hit.position
-        );
+        return true;
+    }
+
+
+    private float GetPathDistance(
+        NavMeshPath path
+    )
+    {
+        if (path == null ||
+            path.corners == null ||
+            path.corners.Length < 2)
+        {
+            return 0f;
+        }
+
+        float distance =
+            0f;
+
+        for (
+            int i = 1;
+            i < path.corners.Length;
+            i++
+        )
+        {
+            distance +=
+                Vector3.Distance(
+                    path.corners[i - 1],
+                    path.corners[i]
+                );
+        }
+
+        return distance;
     }
 
 
