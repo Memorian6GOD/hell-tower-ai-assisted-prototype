@@ -9,6 +9,9 @@ public class PlayerProgression : MonoBehaviour
     [SerializeField]
     private PermanentProgressionConfig progressionConfig;
 
+    [SerializeField]
+    private GameBalanceConfig balanceConfig;
+
     [Header("Debug - Do Not Edit")]
     [SerializeField] private string debugSaveFilePath;
     [SerializeField] private int debugGold;
@@ -135,6 +138,14 @@ public class PlayerProgression : MonoBehaviour
             );
         }
 
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "PlayerProgression: Assign GameBalanceConfig.",
+                this
+            );
+        }
+
         Debug.Log(
             $"PlayerProgression: Progress loaded. " +
             $"Gold = {Gold}, Hero level = {HeroLevel}. " +
@@ -188,7 +199,13 @@ public class PlayerProgression : MonoBehaviour
 
     public bool IsHeroCriticalChanceUnlocked()
     {
-        return HeroLevel >= 3;
+        if (balanceConfig == null)
+        {
+            return false;
+        }
+
+        return HeroLevel >=
+            balanceConfig.HeroCriticalChanceUnlockLevel;
     }
 
     public int GetHeroCriticalChancePurchaseLimit()
@@ -221,7 +238,13 @@ public class PlayerProgression : MonoBehaviour
 
     public bool IsHeroAttackSpeedUnlocked()
     {
-        return HeroLevel >= 5;
+        if (balanceConfig == null)
+        {
+            return false;
+        }
+
+        return HeroLevel >=
+            balanceConfig.HeroAttackSpeedUnlockLevel;
     }
 
     public int GetHeroAttackSpeedPurchaseLimit()
@@ -431,11 +454,22 @@ public class PlayerProgression : MonoBehaviour
             return false;
         }
 
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "PlayerProgression: Assign GameBalanceConfig.",
+                this
+            );
+
+            return false;
+        }
+
         if (!IsHeroCriticalChanceUnlocked())
         {
             Debug.Log(
                 "PlayerProgression: Hero critical chance " +
-                "unlocks at hero level 3.",
+                $"unlocks at hero level " +
+                $"{balanceConfig.HeroCriticalChanceUnlockLevel}.",
                 this
             );
 
@@ -538,11 +572,22 @@ public class PlayerProgression : MonoBehaviour
             return false;
         }
 
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "PlayerProgression: Assign GameBalanceConfig.",
+                this
+            );
+
+            return false;
+        }
+
         if (!IsHeroAttackSpeedUnlocked())
         {
             Debug.Log(
                 "PlayerProgression: Hero attack speed " +
-                "unlocks at hero level 5.",
+                $"unlocks at hero level " +
+                $"{balanceConfig.HeroAttackSpeedUnlockLevel}.",
                 this
             );
 

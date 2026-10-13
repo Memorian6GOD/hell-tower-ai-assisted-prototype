@@ -352,6 +352,7 @@ GameObject:
   - component: {fileID: 4691633597951895184}
   - component: {fileID: 1605858749215051361}
   - component: {fileID: 4298935851269656843}
+  - component: {fileID: 8234423872303714618}
   m_Layer: 3
   m_Name: RangedEnemy
   m_TagString: Untagged
@@ -471,6 +472,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 50
   showHealthBarOnStart: 0
+  debugPoisonActive: 0
+  debugPoisonTickDamage: 0
+  debugPoisonRemainingDuration: 0
+  debugPoisonTimeUntilNextTick: 0
+  debugStunActive: 0
+  debugStunRemainingDuration: 0
+  debugDisabledAttackBehaviourCount: 0
+  debugSlowActive: 0
+  debugSlowPercent: 0
+  debugSlowRemainingDuration: 0
+  debugCurrentAgentSpeed: 0
 --- !u!195 &4861550394625150433
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -519,8 +531,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RangedEnemyMovement
   moveSpeed: 2
   rotationSpeed: 360
+  aggroConfirmationTime: 0.3
   slotArrivalDistance: 0.2
-  repathInterval: 0.1
   navMeshSampleDistance: 2
   debugIsOnNavMesh: 0
   debugIsTargetingPlayer: 0
@@ -531,10 +543,17 @@ MonoBehaviour:
   debugHasPath: 0
   debugPathPending: 0
   debugDistanceToPlayer: 0
+  debugAggroRadius: 0
+  debugDisengageRadius: 0
+  debugIsConfirmingAggro: 0
+  debugAggroConfirmationTimer: 0
   debugRemainingDistance: 0
   debugVelocity: 0
   debugAgentDestination: {x: 0, y: 0, z: 0}
   debugPathStatus: 0
+  debugCurrentTarget: CoreTower
+  debugTargetSwitchCount: 0
+  debugLastTargetSwitch: None
 --- !u!114 &4298935851269656843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -555,6 +574,20 @@ MonoBehaviour:
   debugAttackTimer: 0
   debugIsPreparingShot: 0
   debugCurrentTarget: 
+--- !u!114 &8234423872303714618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7433334293409252831}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 342cc293e1fc6b148b11f381fc854390, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyBalanceBinder
+  enemyType: 2
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
 --- !u!1 &8146012147776218717
 GameObject:
   m_ObjectHideFlags: 0

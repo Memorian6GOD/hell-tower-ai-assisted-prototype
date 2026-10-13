@@ -227,19 +227,47 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 842725528229b6f44a409565c48609ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
-  attackRadius: 5.5
-  attackDamage: 10
-  attackInterval: 1
-  attackWindup: 0.3
   rotationSpeed: 720
+  combatStats: {fileID: 0}
   projectilePrefab: {fileID: 8888590750719776819, guid: 76d9532ac038b5346a37fa6daf726a22, type: 3}
   attackPoint: {fileID: 4299741579362610820}
+  doubleShotProjectileDamageMultiplier: 0.85
+  doubleShotWindupPenalty: 0.1
+  doubleShotAttackIntervalMultiplier: 1.1
+  doubleShotProjectileOffset: 0.08
+  ricochetSearchRadius: 4
+  poisonPrimaryApplyChance: 0.5
+  poisonRicochetApplyChance: 0.33
+  poisonDamageMultiplier: 0.05
+  poisonDuration: 5
+  poisonTickInterval: 2.5
+  stunPrimaryApplyChance: 0.1
+  stunRicochetApplyChance: 0.05
+  stunFirstDuration: 1
+  stunSecondDuration: 2
+  forceStunProcForDebug: 0
+  slowFirstPercent: 0.15
+  slowSecondPercent: 0.3
+  slowDuration: 2
   attackAnimation: {fileID: 4256203778612591794}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 8
+  logShotDamage: 0
   debugAttackDelayed: 0
   debugAttackDelayTimer: 0
+  currentAttackInterval: 0
+  currentAttackWindup: 0
+  debugDoubleShotEnabled: 0
+  debugRicochetStacks: 0
+  debugRicochetExtraTargets: 0
+  debugRicochetDamagePercent: 0
+  debugPoisonEnabled: 0
+  debugStunStacks: 0
+  debugStunDuration: 0
+  debugSlowStacks: 0
+  debugSlowPercent: 0
+  debugSlowDuration: 0
 --- !u!114 &4125263132114524075
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -252,7 +280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6176068b31bbc6d4d926af3a9c7b9314, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  maxHealth: 100
+  combatStats: {fileID: 0}
 --- !u!114 &2314803763390578229
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -265,8 +293,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7535e397c8b59aa4699a4038cd7b38d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAggro
-  aggroRadius: 4
-  disengageRadius: 5
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
 --- !u!1 &3962947076046487398
 GameObject:
   m_ObjectHideFlags: 0

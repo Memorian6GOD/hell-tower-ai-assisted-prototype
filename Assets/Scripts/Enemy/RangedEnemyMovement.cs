@@ -5,48 +5,84 @@ using UnityEngine.AI;
 public class RangedEnemyMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private float rotationSpeed = 360f;
+    [SerializeField]
+    private float moveSpeed = 2f;
 
-    [Header("Player Aggro Settings")]
-    [SerializeField, Min(0f)]
-    private float aggroConfirmationTime = 0.3f;
+    [SerializeField]
+    private float rotationSpeed = 360f;
+
 
     [Header("Core Tower Slot Settings")]
-    [SerializeField] private float slotArrivalDistance = 0.2f;
+    [SerializeField]
+    private float slotArrivalDistance = 0.2f;
+
 
     [Header("Navigation Settings")]
-    [SerializeField] private float navMeshSampleDistance = 2f;
+    [SerializeField]
+    private float navMeshSampleDistance = 2f;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private bool debugIsOnNavMesh;
-    [SerializeField] private bool debugIsTargetingPlayer;
-    [SerializeField] private bool debugIsAtTarget;
-    [SerializeField] private bool debugAgentIsStopped;
+    [SerializeField]
+    private bool debugIsOnNavMesh;
 
-    [SerializeField] private bool debugHasCoreTowerSlot;
-    [SerializeField] private bool debugHasCoreTowerDestination;
+    [SerializeField]
+    private bool debugIsTargetingPlayer;
 
-    [SerializeField] private bool debugHasPath;
-    [SerializeField] private bool debugPathPending;
+    [SerializeField]
+    private bool debugIsAtTarget;
 
-    [SerializeField] private float debugDistanceToPlayer;
-    [SerializeField] private float debugAggroRadius;
-    [SerializeField] private float debugDisengageRadius;
+    [SerializeField]
+    private bool debugAgentIsStopped;
 
-    [SerializeField] private bool debugIsConfirmingAggro;
-    [SerializeField] private float debugAggroConfirmationTimer;
+    [SerializeField]
+    private bool debugHasCoreTowerSlot;
 
-    [SerializeField] private float debugRemainingDistance;
-    [SerializeField] private float debugVelocity;
+    [SerializeField]
+    private bool debugHasCoreTowerDestination;
 
-    [SerializeField] private Vector3 debugAgentDestination;
+    [SerializeField]
+    private bool debugHasPath;
 
-    [SerializeField] private NavMeshPathStatus debugPathStatus;
+    [SerializeField]
+    private bool debugPathPending;
 
-    [SerializeField] private string debugCurrentTarget = "CoreTower";
-    [SerializeField] private int debugTargetSwitchCount;
-    [SerializeField] private string debugLastTargetSwitch = "None";
+    [SerializeField]
+    private float debugDistanceToPlayer;
+
+    [SerializeField]
+    private float debugAggroRadius;
+
+    [SerializeField]
+    private float debugDisengageRadius;
+
+    [SerializeField]
+    private bool debugIsConfirmingAggro;
+
+    [SerializeField]
+    private float debugAggroConfirmationTimer;
+
+    [SerializeField]
+    private float debugRemainingDistance;
+
+    [SerializeField]
+    private float debugVelocity;
+
+    [SerializeField]
+    private Vector3 debugAgentDestination;
+
+    [SerializeField]
+    private NavMeshPathStatus debugPathStatus;
+
+    [SerializeField]
+    private string debugCurrentTarget = "CoreTower";
+
+    [SerializeField]
+    private int debugTargetSwitchCount;
+
+    [SerializeField]
+    private string debugLastTargetSwitch = "None";
+
 
     private CoreTowerHealth coreTower;
     private CoreTowerRangedAttackSlots rangedAttackSlots;
@@ -63,13 +99,60 @@ public class RangedEnemyMovement : MonoBehaviour
 
     private bool hasCoreTowerDestination;
 
-    public bool IsAtTarget { get; private set; }
-    public bool IsTargetingPlayer { get; private set; }
+    private bool hasStarted;
+
+
+    public bool IsAtTarget
+    {
+        get;
+        private set;
+    }
+
+    public bool IsTargetingPlayer
+    {
+        get;
+        private set;
+    }
+
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureMoveSpeed(
+        float newMoveSpeed
+    )
+    {
+        if (hasStarted ||
+            newMoveSpeed <= 0f)
+        {
+            return false;
+        }
+
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                newMoveSpeed
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-        enemyCollider = GetComponent<Collider>();
+        hasStarted =
+            true;
+
+        agent =
+            GetComponent<NavMeshAgent>();
+
+        enemyCollider =
+            GetComponent<Collider>();
 
         coreTower =
             FindAnyObjectByType<CoreTowerHealth>();
@@ -91,19 +174,32 @@ public class RangedEnemyMovement : MonoBehaviour
                 playerHealth.GetComponent<PlayerAggro>();
         }
 
-        agent.speed = moveSpeed;
-        agent.angularSpeed = rotationSpeed;
-        agent.acceleration = 20f;
+        agent.speed =
+            moveSpeed;
 
-        agent.autoBraking = true;
-        agent.autoRepath = true;
-        agent.updateRotation = true;
+        agent.angularSpeed =
+            rotationSpeed;
+
+        agent.acceleration =
+            20f;
+
+        agent.autoBraking =
+            true;
+
+        agent.autoRepath =
+            true;
+
+        agent.updateRotation =
+            true;
 
         agent.obstacleAvoidanceType =
             ObstacleAvoidanceType.NoObstacleAvoidance;
 
         agent.avoidancePriority =
-            Random.Range(20, 81);
+            Random.Range(
+                20,
+                81
+            );
 
         if (enemyCollider != null)
         {
@@ -112,7 +208,8 @@ public class RangedEnemyMovement : MonoBehaviour
 
             if (enemyRadius > 0f)
             {
-                agent.radius = enemyRadius;
+                agent.radius =
+                    enemyRadius;
             }
         }
 
@@ -162,17 +259,21 @@ public class RangedEnemyMovement : MonoBehaviour
                 playerAggro.DisengageRadius;
         }
 
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
 
-        debugCurrentTarget = "CoreTower";
+        debugCurrentTarget =
+            "CoreTower";
     }
+
 
     private void Update()
     {
         if (agent == null ||
             !agent.isOnNavMesh)
         {
-            IsAtTarget = false;
+            IsAtTarget =
+                false;
 
             return;
         }
@@ -200,10 +301,16 @@ public class RangedEnemyMovement : MonoBehaviour
         UpdateCoreTowerTarget();
     }
 
+
     private void LateUpdate()
     {
         UpdateDebugInfo();
     }
+
+
+    // =========================================================
+    // PLAYER AGGRO
+    // =========================================================
 
     private bool ShouldTargetPlayer()
     {
@@ -226,7 +333,8 @@ public class RangedEnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        directionToPlayer.y = 0f;
+        directionToPlayer.y =
+            0f;
 
         float distanceToPlayer =
             directionToPlayer.magnitude;
@@ -247,9 +355,13 @@ public class RangedEnemyMovement : MonoBehaviour
             return false;
         }
 
-        if (aggroConfirmationTime <= 0f)
+        float confirmationTime =
+            playerAggro.AggroConfirmationTime;
+
+        if (confirmationTime <= 0f)
         {
-            aggroConfirmationTimer = 0f;
+            aggroConfirmationTimer =
+                0f;
 
             return true;
         }
@@ -258,10 +370,10 @@ public class RangedEnemyMovement : MonoBehaviour
             Time.deltaTime;
 
         if (aggroConfirmationTimer >=
-            aggroConfirmationTime)
+            confirmationTime)
         {
             aggroConfirmationTimer =
-                aggroConfirmationTime;
+                confirmationTime;
 
             return true;
         }
@@ -269,10 +381,13 @@ public class RangedEnemyMovement : MonoBehaviour
         return false;
     }
 
+
     private void ResetAggroConfirmation()
     {
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
     }
+
 
     private void BeginTargetingPlayer()
     {
@@ -281,24 +396,36 @@ public class RangedEnemyMovement : MonoBehaviour
             "Player"
         );
 
-        IsTargetingPlayer = true;
-        IsAtTarget = true;
+        IsTargetingPlayer =
+            true;
 
-        hasCoreTowerDestination = false;
+        IsAtTarget =
+            true;
 
-        agent.isStopped = true;
+        hasCoreTowerDestination =
+            false;
+
+        agent.isStopped =
+            true;
+
         agent.ResetPath();
 
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
     }
+
 
     private void UpdatePlayerTarget()
     {
-        IsAtTarget = true;
-        agent.isStopped = true;
+        IsAtTarget =
+            true;
+
+        agent.isStopped =
+            true;
 
         RotateTowardsPlayer();
     }
+
 
     private void StopTargetingPlayer()
     {
@@ -307,16 +434,28 @@ public class RangedEnemyMovement : MonoBehaviour
             "CoreTower"
         );
 
-        IsTargetingPlayer = false;
-        IsAtTarget = false;
+        IsTargetingPlayer =
+            false;
 
-        hasCoreTowerDestination = false;
+        IsAtTarget =
+            false;
 
-        agent.isStopped = false;
+        hasCoreTowerDestination =
+            false;
+
+        agent.isStopped =
+            false;
+
         agent.ResetPath();
 
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
     }
+
+
+    // =========================================================
+    // CORE TOWER TARGET
+    // =========================================================
 
     private void UpdateCoreTowerTarget()
     {
@@ -331,12 +470,16 @@ public class RangedEnemyMovement : MonoBehaviour
         if (currentCoreTowerSlot == null)
         {
             currentCoreTowerSlot =
-                rangedAttackSlots.ClaimClosestSlot(
-                    gameObject
-                );
+                rangedAttackSlots
+                    .ClaimClosestSlot(
+                        gameObject
+                    );
 
-            IsAtTarget = false;
-            hasCoreTowerDestination = false;
+            IsAtTarget =
+                false;
+
+            hasCoreTowerDestination =
+                false;
         }
 
         if (currentCoreTowerSlot == null)
@@ -355,25 +498,35 @@ public class RangedEnemyMovement : MonoBehaviour
 
         if (!hasCoreTowerDestination)
         {
-            IsAtTarget = false;
-            agent.isStopped = false;
+            IsAtTarget =
+                false;
+
+            agent.isStopped =
+                false;
 
             return;
         }
 
         if (HasReachedCoreTowerSlot())
         {
-            IsAtTarget = true;
-            agent.isStopped = true;
+            IsAtTarget =
+                true;
+
+            agent.isStopped =
+                true;
 
             RotateTowardsCoreTower();
 
             return;
         }
 
-        IsAtTarget = false;
-        agent.isStopped = false;
+        IsAtTarget =
+            false;
+
+        agent.isStopped =
+            false;
     }
+
 
     private bool HasReachedCoreTowerSlot()
     {
@@ -398,6 +551,7 @@ public class RangedEnemyMovement : MonoBehaviour
                slotArrivalDistance;
     }
 
+
     private void SetDestinationToPoint(
         Vector3 targetPosition
     )
@@ -412,7 +566,8 @@ public class RangedEnemyMovement : MonoBehaviour
 
         if (!sampleSucceeded)
         {
-            hasCoreTowerDestination = false;
+            hasCoreTowerDestination =
+                false;
 
             Debug.LogWarning(
                 $"{name}: Could not find a NavMesh " +
@@ -424,7 +579,8 @@ public class RangedEnemyMovement : MonoBehaviour
             return;
         }
 
-        agent.stoppingDistance = 0f;
+        agent.stoppingDistance =
+            0f;
 
         bool destinationAccepted =
             agent.SetDestination(
@@ -444,6 +600,11 @@ public class RangedEnemyMovement : MonoBehaviour
             );
         }
     }
+
+
+    // =========================================================
+    // DIMENSIONS / ROTATION
+    // =========================================================
 
     private float GetEnemyHorizontalRadius()
     {
@@ -466,6 +627,7 @@ public class RangedEnemyMovement : MonoBehaviour
         );
     }
 
+
     private void RotateTowardsPlayer()
     {
         if (playerHealth == null)
@@ -477,10 +639,14 @@ public class RangedEnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
-        RotateTowardsDirection(direction);
+        RotateTowardsDirection(
+            direction
+        );
     }
+
 
     private void RotateTowardsCoreTower()
     {
@@ -493,43 +659,62 @@ public class RangedEnemyMovement : MonoBehaviour
             coreTower.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
-        RotateTowardsDirection(direction);
+        RotateTowardsDirection(
+            direction
+        );
     }
+
 
     private void RotateTowardsDirection(
         Vector3 direction
     )
     {
-        if (direction.sqrMagnitude < 0.001f)
+        if (direction.sqrMagnitude <
+            0.001f)
         {
             return;
         }
 
         Quaternion targetRotation =
-            Quaternion.LookRotation(direction);
+            Quaternion.LookRotation(
+                direction
+            );
 
         transform.rotation =
             Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                rotationSpeed * Time.deltaTime
+                rotationSpeed *
+                Time.deltaTime
             );
     }
 
+
+    // =========================================================
+    // AGENT / SLOT
+    // =========================================================
+
     private void StopAgent()
     {
-        IsAtTarget = false;
-        hasCoreTowerDestination = false;
+        IsAtTarget =
+            false;
+
+        hasCoreTowerDestination =
+            false;
 
         if (agent != null &&
             agent.isOnNavMesh)
         {
-            agent.isStopped = true;
+            agent.isStopped =
+                true;
+
             agent.ResetPath();
         }
     }
+
 
     private void ReleaseCoreTowerSlot()
     {
@@ -540,9 +725,17 @@ public class RangedEnemyMovement : MonoBehaviour
             );
         }
 
-        currentCoreTowerSlot = null;
-        hasCoreTowerDestination = false;
+        currentCoreTowerSlot =
+            null;
+
+        hasCoreTowerDestination =
+            false;
     }
+
+
+    // =========================================================
+    // DIAGNOSTICS
+    // =========================================================
 
     private void LogTargetSwitch(
         string oldTarget,
@@ -570,6 +763,11 @@ public class RangedEnemyMovement : MonoBehaviour
                 ? playerAggro.DisengageRadius
                 : 0f;
 
+        float confirmationTime =
+            playerAggro != null
+                ? playerAggro.AggroConfirmationTime
+                : 0f;
+
         Debug.Log(
             $"{name}: ranged target changed " +
             $"{oldTarget} -> {newTarget}. " +
@@ -580,12 +778,13 @@ public class RangedEnemyMovement : MonoBehaviour
             $"Disengage Radius = " +
             $"{disengageRadius:F2}. " +
             $"Aggro confirmation = " +
-            $"{aggroConfirmationTime:F2}s. " +
+            $"{confirmationTime:F2}s. " +
             $"Switch count = " +
             $"{debugTargetSwitchCount}.",
             this
         );
     }
+
 
     private float GetCurrentDistanceToPlayer()
     {
@@ -598,10 +797,12 @@ public class RangedEnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
         return direction.magnitude;
     }
+
 
     private void UpdateDebugInfo()
     {
@@ -640,7 +841,8 @@ public class RangedEnemyMovement : MonoBehaviour
 
         if (agent == null)
         {
-            debugIsOnNavMesh = false;
+            debugIsOnNavMesh =
+                false;
 
             return;
         }
@@ -678,18 +880,24 @@ public class RangedEnemyMovement : MonoBehaviour
             GetCurrentDistanceToPlayer();
     }
 
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
     private void OnDisable()
     {
         ResetAggroConfirmation();
         ReleaseCoreTowerSlot();
     }
 
+
     private void OnValidate()
     {
-        aggroConfirmationTime =
+        moveSpeed =
             Mathf.Max(
-                0f,
-                aggroConfirmationTime
+                0.01f,
+                moveSpeed
             );
     }
 }

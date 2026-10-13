@@ -2,112 +2,102 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-[Serializable]
-public class WaveDefinition
-{
-    [SerializeField] private string waveName = "Wave";
-    [SerializeField, Min(0.01f)] private float healthMultiplier = 1f;
-    [SerializeField, Min(0.01f)] private float damageMultiplier = 1f;
-    [SerializeField] private List<EnemySpawnGroup> enemyGroups = new();
-
-    public string WaveName => waveName;
-    public float HealthMultiplier => healthMultiplier;
-    public float DamageMultiplier => damageMultiplier;
-    public IReadOnlyList<EnemySpawnGroup> EnemyGroups => enemyGroups;
-
-    public void Validate(int waveNumber)
-    {
-        if (string.IsNullOrWhiteSpace(waveName) ||
-            waveName == "Wave")
-        {
-            waveName = $"Wave {waveNumber}";
-        }
-
-        if (healthMultiplier <= 0f)
-        {
-            healthMultiplier = 1f;
-        }
-
-        if (damageMultiplier <= 0f)
-        {
-            damageMultiplier = 1f;
-        }
-
-        if (enemyGroups == null)
-        {
-            enemyGroups = new List<EnemySpawnGroup>();
-        }
-    }
-}
 
 public class WaveManager : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private EnemySpawner enemySpawner;
-    [SerializeField] private BossFightManager bossFightManager;
 
-    [Header("Wave Settings")]
-    [SerializeField, Min(1)] private int totalWaves = 15;
-    [SerializeField] private List<WaveDefinition> waves = new();
+    [SerializeField]
+    private EnemySpawner enemySpawner;
+
+    [SerializeField]
+    private BossFightManager bossFightManager;
+
+
+    [Header("Master Balance Source")]
+
+    [SerializeField]
+    private GameBalanceConfig balanceConfig;
+
+
+    [Header("Enemy Prefab Registry - Technical")]
+
+    [SerializeField]
+    private GameObject meleeEnemyPrefab;
+
+    [SerializeField]
+    private GameObject rangedEnemyPrefab;
+
+    [SerializeField]
+    private GameObject strongEnemyPrefab;
+
+    [SerializeField]
+    private GameObject siegeEnemyPrefab;
+
 
     [Header("Boss Settings")]
-    [SerializeField] private GameObject bossPrefab;
 
-    public int CurrentWave { get; private set; }
-    public int TotalWaves => totalWaves;
-    public bool IsWaveActive { get; private set; }
-    public bool AreAllWavesCompleted { get; private set; }
+    [SerializeField]
+    private GameObject bossPrefab;
+
+
+    public int CurrentWave
+    {
+        get;
+        private set;
+    }
+
+    public int TotalWaves =>
+        balanceConfig != null
+            ? balanceConfig.WaveCompositionCount
+            : 0;
+
+    public bool IsWaveActive
+    {
+        get;
+        private set;
+    }
+
+    public bool AreAllWavesCompleted
+    {
+        get;
+        private set;
+    }
+
 
     public event Action<int> WaveCompleted;
 
-    private float activeHealthMultiplier = 1f;
-    private float activeDamageMultiplier = 1f;
+
+    private float activeHealthMultiplier =
+        1f;
+
+    private float activeDamageMultiplier =
+        1f;
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void OnEnable()
     {
         if (enemySpawner != null)
         {
-            enemySpawner.EnemySpawned += HandleEnemySpawned;
+            enemySpawner.EnemySpawned +=
+                HandleEnemySpawned;
         }
     }
+
 
     private void OnDisable()
     {
         if (enemySpawner != null)
         {
-            enemySpawner.EnemySpawned -= HandleEnemySpawned;
+            enemySpawner.EnemySpawned -=
+                HandleEnemySpawned;
         }
     }
 
-    private void OnValidate()
-    {
-        if (totalWaves < 1)
-        {
-            totalWaves = 1;
-        }
-
-        if (waves == null)
-        {
-            waves = new List<WaveDefinition>();
-        }
-
-        while (waves.Count < totalWaves)
-        {
-            waves.Add(
-                new WaveDefinition()
-            );
-        }
-
-        for (int i = 0; i < waves.Count; i++)
-        {
-            if (waves[i] == null)
-            {
-                waves[i] = new WaveDefinition();
-            }
-
-            waves[i].Validate(i + 1);
-        }
-    }
 
     private void Update()
     {
@@ -126,7 +116,8 @@ public class WaveManager : MonoBehaviour
             return;
         }
 
-        if (enemySpawner.AliveEnemyCount > 0)
+        if (enemySpawner.AliveEnemyCount >
+            0)
         {
             return;
         }
@@ -134,11 +125,17 @@ public class WaveManager : MonoBehaviour
         CompleteWave();
     }
 
+
+    // =========================================================
+    // START WAVE
+    // =========================================================
+
     [ContextMenu("Start Wave")]
     public void StartWave()
     {
         TryStartWave();
     }
+
 
     public bool TryStartWave()
     {
@@ -156,24 +153,45 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        int nextWave = CurrentWave + 1;
-        WaveDefinition waveToStart = waves[nextWave - 1];
+        int nextWave =
+            CurrentWave + 1;
+
+        WaveCompositionValues waveToStart =
+            balanceConfig.GetWaveComposition(
+                nextWave
+            );
+
+        WaveBalanceValues waveBalance =
+            balanceConfig.GetWaveBalance(
+                nextWave
+            );
+
+        if (!TryBuildSpawnGroups(
+                waveToStart,
+                out List<EnemySpawnGroup> spawnGroups
+            ))
+        {
+            return false;
+        }
 
         activeHealthMultiplier =
-            waveToStart.HealthMultiplier;
+            waveBalance.HealthMultiplier;
 
         activeDamageMultiplier =
-            waveToStart.DamageMultiplier;
+            waveBalance.DamageMultiplier;
 
         bool spawnStarted =
             enemySpawner.TryStartSpawnSequence(
-                waveToStart.EnemyGroups
+                spawnGroups
             );
 
         if (!spawnStarted)
         {
-            activeHealthMultiplier = 1f;
-            activeDamageMultiplier = 1f;
+            activeHealthMultiplier =
+                1f;
+
+            activeDamageMultiplier =
+                1f;
 
             Debug.LogWarning(
                 "WaveManager: Wave could not be started."
@@ -182,17 +200,27 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        CurrentWave = nextWave;
-        IsWaveActive = true;
+        CurrentWave =
+            nextWave;
+
+        IsWaveActive =
+            true;
 
         Debug.Log(
             $"WaveManager: Wave {CurrentWave} " +
             $"of {TotalWaves} started. " +
-            $"Name: {waveToStart.WaveName}."
+            $"Name: {waveToStart.WaveName}. " +
+            $"Health x{activeHealthMultiplier}, " +
+            $"Damage x{activeDamageMultiplier}."
         );
 
         return true;
     }
+
+
+    // =========================================================
+    // VALIDATION
+    // =========================================================
 
     private bool CanStartNextWave()
     {
@@ -205,20 +233,31 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        if (totalWaves <= 0)
+        if (balanceConfig == null)
         {
             Debug.LogWarning(
-                "WaveManager: Total Waves must be greater than 0."
+                "WaveManager: GameBalanceConfig is not assigned."
             );
 
             return false;
         }
 
-        if (waves == null || waves.Count < totalWaves)
+        if (TotalWaves <= 0)
         {
             Debug.LogWarning(
-                "WaveManager: The Waves list must contain " +
-                $"at least {totalWaves} waves."
+                "WaveManager: GameBalanceConfig does not " +
+                "contain wave composition data."
+            );
+
+            return false;
+        }
+
+        if (balanceConfig.WaveBalanceCount <
+            TotalWaves)
+        {
+            Debug.LogWarning(
+                "WaveManager: Wave balance list is shorter " +
+                "than the wave composition list."
             );
 
             return false;
@@ -242,7 +281,8 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        if (enemySpawner.AliveEnemyCount > 0)
+        if (enemySpawner.AliveEnemyCount >
+            0)
         {
             Debug.LogWarning(
                 "WaveManager: Cannot start a wave " +
@@ -252,12 +292,19 @@ public class WaveManager : MonoBehaviour
             return false;
         }
 
-        WaveDefinition nextWave = waves[CurrentWave];
+        int nextWaveNumber =
+            CurrentWave + 1;
+
+        WaveCompositionValues nextWave =
+            balanceConfig.GetWaveComposition(
+                nextWaveNumber
+            );
 
         if (nextWave == null)
         {
             Debug.LogWarning(
-                $"WaveManager: Wave {CurrentWave + 1} is empty."
+                $"WaveManager: Composition data for wave " +
+                $"{nextWaveNumber} was not found."
             );
 
             return false;
@@ -267,14 +314,38 @@ public class WaveManager : MonoBehaviour
             nextWave.EnemyGroups.Count == 0)
         {
             Debug.LogWarning(
-                $"WaveManager: Wave {CurrentWave + 1} " +
+                $"WaveManager: Wave {nextWaveNumber} " +
                 "does not contain enemy groups."
             );
 
             return false;
         }
 
-        if (!CanPrepareBossFight(nextWave))
+        WaveBalanceValues nextWaveBalance =
+            balanceConfig.GetWaveBalance(
+                nextWaveNumber
+            );
+
+        if (nextWaveBalance == null)
+        {
+            Debug.LogWarning(
+                $"WaveManager: Balance data for wave " +
+                $"{nextWaveNumber} was not found."
+            );
+
+            return false;
+        }
+
+        if (!CanResolveEnemyPrefabs(
+                nextWave
+            ))
+        {
+            return false;
+        }
+
+        if (!CanPrepareBossFight(
+                nextWave
+            ))
         {
             return false;
         }
@@ -282,23 +353,67 @@ public class WaveManager : MonoBehaviour
         return true;
     }
 
-    private bool CanPrepareBossFight(
-        WaveDefinition wave
+
+    private bool CanResolveEnemyPrefabs(
+        WaveCompositionValues wave
     )
     {
-        int bossCount = 0;
-
-        for (int i = 0; i < wave.EnemyGroups.Count; i++)
+        for (int i = 0;
+             i < wave.EnemyGroups.Count;
+             i++)
         {
-            EnemySpawnGroup group = wave.EnemyGroups[i];
+            WaveSpawnGroupBalanceValues group =
+                wave.EnemyGroups[i];
+
+            if (group == null)
+            {
+                Debug.LogWarning(
+                    $"WaveManager: Wave group {i + 1} is empty."
+                );
+
+                return false;
+            }
+
+            if (GetEnemyPrefab(
+                    group.EnemyType
+                ) == null)
+            {
+                Debug.LogWarning(
+                    "WaveManager: Prefab registry does not " +
+                    $"contain {group.EnemyType}."
+                );
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    private bool CanPrepareBossFight(
+        WaveCompositionValues wave
+    )
+    {
+        int bossCount =
+            0;
+
+        for (int i = 0;
+             i < wave.EnemyGroups.Count;
+             i++)
+        {
+            WaveSpawnGroupBalanceValues group =
+                wave.EnemyGroups[i];
 
             if (group == null ||
-                group.EnemyPrefab != bossPrefab)
+                group.EnemyType !=
+                WaveEnemyType.Boss)
             {
                 continue;
             }
 
-            bossCount += group.EnemyCount;
+            bossCount +=
+                group.EnemyCount;
         }
 
         if (bossCount == 0)
@@ -337,6 +452,91 @@ public class WaveManager : MonoBehaviour
         return true;
     }
 
+
+    // =========================================================
+    // RUNTIME SPAWN DATA
+    // =========================================================
+
+    private bool TryBuildSpawnGroups(
+        WaveCompositionValues wave,
+        out List<EnemySpawnGroup> spawnGroups
+    )
+    {
+        spawnGroups =
+            new List<EnemySpawnGroup>();
+
+        if (wave == null ||
+            wave.EnemyGroups == null)
+        {
+            return false;
+        }
+
+        for (int i = 0;
+             i < wave.EnemyGroups.Count;
+             i++)
+        {
+            WaveSpawnGroupBalanceValues balanceGroup =
+                wave.EnemyGroups[i];
+
+            if (balanceGroup == null)
+            {
+                return false;
+            }
+
+            GameObject enemyPrefab =
+                GetEnemyPrefab(
+                    balanceGroup.EnemyType
+                );
+
+            if (enemyPrefab == null)
+            {
+                return false;
+            }
+
+            spawnGroups.Add(
+                new EnemySpawnGroup(
+                    enemyPrefab,
+                    balanceGroup.EnemyCount,
+                    balanceGroup.SpawnInterval
+                )
+            );
+        }
+
+        return spawnGroups.Count > 0;
+    }
+
+
+    private GameObject GetEnemyPrefab(
+        WaveEnemyType enemyType
+    )
+    {
+        switch (enemyType)
+        {
+            case WaveEnemyType.Melee:
+                return meleeEnemyPrefab;
+
+            case WaveEnemyType.Ranged:
+                return rangedEnemyPrefab;
+
+            case WaveEnemyType.Strong:
+                return strongEnemyPrefab;
+
+            case WaveEnemyType.Siege:
+                return siegeEnemyPrefab;
+
+            case WaveEnemyType.Boss:
+                return bossPrefab;
+
+            default:
+                return null;
+        }
+    }
+
+
+    // =========================================================
+    // SPAWN HANDLING
+    // =========================================================
+
     private void HandleEnemySpawned(
         GameObject spawnedEnemy,
         GameObject sourcePrefab
@@ -344,12 +544,22 @@ public class WaveManager : MonoBehaviour
     {
         if (sourcePrefab == bossPrefab)
         {
-            HandleSpawnedBoss(spawnedEnemy);
+            HandleSpawnedBoss(
+                spawnedEnemy
+            );
+
             return;
         }
 
-        ApplyWaveModifiers(spawnedEnemy);
+        ApplyWaveModifiers(
+            spawnedEnemy
+        );
     }
+
+
+    // =========================================================
+    // WAVE MODIFIERS
+    // =========================================================
 
     private void ApplyWaveModifiers(
         GameObject spawnedEnemy
@@ -365,6 +575,7 @@ public class WaveManager : MonoBehaviour
             );
         }
 
+
         EnemyAttack meleeAttack =
             spawnedEnemy.GetComponent<EnemyAttack>();
 
@@ -374,6 +585,7 @@ public class WaveManager : MonoBehaviour
                 activeDamageMultiplier
             );
         }
+
 
         RangedEnemyAttack rangedAttack =
             spawnedEnemy.GetComponent<RangedEnemyAttack>();
@@ -385,6 +597,18 @@ public class WaveManager : MonoBehaviour
             );
         }
 
+
+        SiegeEnemyAttack siegeAttack =
+            spawnedEnemy.GetComponent<SiegeEnemyAttack>();
+
+        if (siegeAttack != null)
+        {
+            siegeAttack.ApplyDamageMultiplier(
+                activeDamageMultiplier
+            );
+        }
+
+
         Debug.Log(
             $"WaveManager: Applied modifiers to " +
             $"{spawnedEnemy.name}. Health x" +
@@ -393,11 +617,15 @@ public class WaveManager : MonoBehaviour
         );
     }
 
+
+    // =========================================================
+    // BOSS
+    // =========================================================
+
     private void HandleSpawnedBoss(
         GameObject spawnedEnemy
     )
     {
-
         EnemyHealth spawnedBossHealth =
             spawnedEnemy.GetComponent<EnemyHealth>();
 
@@ -407,7 +635,10 @@ public class WaveManager : MonoBehaviour
                 "WaveManager: Spawned boss does not have EnemyHealth."
             );
 
-            Destroy(spawnedEnemy);
+            Destroy(
+                spawnedEnemy
+            );
+
             return;
         }
 
@@ -422,7 +653,10 @@ public class WaveManager : MonoBehaviour
                 "WaveManager: Boss fight could not start."
             );
 
-            Destroy(spawnedEnemy);
+            Destroy(
+                spawnedEnemy
+            );
+
             return;
         }
 
@@ -432,18 +666,26 @@ public class WaveManager : MonoBehaviour
         );
     }
 
+
+    // =========================================================
+    // COMPLETE WAVE
+    // =========================================================
+
     private void CompleteWave()
     {
-        IsWaveActive = false;
+        IsWaveActive =
+            false;
 
         Debug.Log(
             $"WaveManager: Wave {CurrentWave} " +
             $"of {TotalWaves} completed."
         );
 
-        if (CurrentWave >= TotalWaves)
+        if (CurrentWave >=
+            TotalWaves)
         {
-            AreAllWavesCompleted = true;
+            AreAllWavesCompleted =
+                true;
 
             Debug.Log(
                 $"WaveManager: All {TotalWaves} " +
@@ -451,6 +693,8 @@ public class WaveManager : MonoBehaviour
             );
         }
 
-        WaveCompleted?.Invoke(CurrentWave);
+        WaveCompleted?.Invoke(
+            CurrentWave
+        );
     }
 }

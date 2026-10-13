@@ -2,12 +2,11 @@ using UnityEngine;
 
 public class BossMeleeAttack : MonoBehaviour
 {
-    [Header("Damage Settings")]
-    [SerializeField] private int playerDamage = 35;
-    [SerializeField] private int coreTowerDamage = 100;
-
-    [Header("Area Settings")]
-    [SerializeField] private float attackRadius = 3f;
+    // Runtime design values are supplied by BossBalanceBinder
+    // from GameBalanceConfig before Start().
+    private int playerDamage;
+    private int coreTowerDamage;
+    private float attackRadius;
 
     [Header("Visual Settings")]
     [SerializeField] private GameObject attackIndicator;
@@ -18,8 +17,48 @@ public class BossMeleeAttack : MonoBehaviour
     private CoreTowerHealth coreTower;
     private Collider coreTowerCollider;
 
+    private bool balanceConfigured;
+    private bool hasStarted;
+
+    public bool ConfigureBalance(
+        BossMeleeAttackBalanceValues balance
+    )
+    {
+        if (hasStarted ||
+            balance == null)
+        {
+            return false;
+        }
+
+        playerDamage =
+            balance.PlayerDamage;
+
+        coreTowerDamage =
+            balance.CoreTowerDamage;
+
+        attackRadius =
+            balance.AttackRadius;
+
+        balanceConfigured = true;
+        return true;
+    }
+
     private void Start()
     {
+        hasStarted = true;
+
+        if (!balanceConfigured)
+        {
+            Debug.LogError(
+                "BossMeleeAttack: Boss attack balance was not " +
+                "configured before Start().",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         playerHealth =
             FindAnyObjectByType<PlayerHealth>();
 

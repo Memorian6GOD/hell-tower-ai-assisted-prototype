@@ -467,6 +467,7 @@ GameObject:
   - component: {fileID: 5706333360704228612}
   - component: {fileID: 5916988210617565529}
   - component: {fileID: 4717714900560563821}
+  - component: {fileID: -8290279190561274208}
   m_Layer: 3
   m_Name: FirstBoss
   m_TagString: Untagged
@@ -556,6 +557,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHealth
   maxHealth: 550
   showHealthBarOnStart: 1
+  debugPoisonActive: 0
+  debugPoisonTickDamage: 0
+  debugPoisonRemainingDuration: 0
+  debugPoisonTimeUntilNextTick: 0
+  debugStunActive: 0
+  debugStunRemainingDuration: 0
+  debugDisabledAttackBehaviourCount: 0
+  debugSlowActive: 0
+  debugSlowPercent: 0
+  debugSlowRemainingDuration: 0
+  debugCurrentAgentSpeed: 0
 --- !u!114 &5844102125305171004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -568,9 +580,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2122f8b8e5b49df42b3628717f4ccdbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossMovement
-  moveSpeed: 2
   rotationSpeed: 240
-  stoppingDistance: 2.2
   repathInterval: 0.1
   debugIsPlayerAlive: 0
   debugIsOnNavMesh: 0
@@ -594,18 +604,6 @@ MonoBehaviour:
   meleeAttack: {fileID: 0}
   mediumLineAttack: {fileID: 0}
   longZonesAttack: {fileID: 0}
-  initialAttackDelay: 2
-  requireMediumAttackBeforeLong: 1
-  meleeAttackRange: 2.5
-  mediumAttackRange: 7
-  longAttackRange: 20
-  meleeAttackCooldown: 3
-  mediumAttackCooldown: 5
-  longAttackCooldown: 7
-  meleeAttackWindup: 0.75
-  mediumAttackWindup: 1
-  longAttackWindup: 1.2
-  recoveryDuration: 0.8
   debugIsAttacking: 0
   debugDistanceToPlayer: 0
   debugInitialAttackDelay: 0
@@ -703,6 +701,19 @@ MonoBehaviour:
   debugDialogueVisible: 0
   debugIntroLineShown: 0
   debugReviveLineShown: 0
+--- !u!114 &-8290279190561274208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4860089283288767153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f314a39b8c870074bb81b776013f0c58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossBalanceBinder
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
 --- !u!1 &5976360987372895692
 GameObject:
   m_ObjectHideFlags: 0

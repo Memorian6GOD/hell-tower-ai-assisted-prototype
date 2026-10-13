@@ -3,13 +3,20 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("Movement Source")]
+    [SerializeField]
+    private CombatStats combatStats;
+
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float gravity = -9.81f;
+    [SerializeField]
+    private float gravity = -9.81f;
 
     [Header("Collision Settings")]
-    [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private float enemyCheckDistance = 0.05f;
+    [SerializeField]
+    private LayerMask enemyLayer;
+
+    [SerializeField]
+    private float enemyCheckDistance = 0.05f;
 
     private CharacterController characterController;
     private PlayerHealth playerHealth;
@@ -26,6 +33,36 @@ public class PlayerMovement : MonoBehaviour
 
         playerHealth =
             GetComponent<PlayerHealth>();
+
+        if (combatStats == null)
+        {
+            combatStats =
+                FindAnyObjectByType<CombatStats>(
+                    FindObjectsInactive.Include
+                );
+        }
+
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "PlayerMovement: CombatStats was not found.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
+        if (combatStats.HeroMoveSpeed <= 0f)
+        {
+            Debug.LogError(
+                "PlayerMovement: Hero move speed must be " +
+                "positive. Check GameBalanceConfig.",
+                this
+            );
+
+            enabled = false;
+        }
     }
 
     private void Update()
@@ -95,6 +132,9 @@ public class PlayerMovement : MonoBehaviour
         verticalVelocity +=
             gravity * Time.deltaTime;
 
+        float moveSpeed =
+            combatStats.HeroMoveSpeed;
+
         Vector3 finalMovement =
             moveDirection * moveSpeed +
             Vector3.up * verticalVelocity;
@@ -142,7 +182,8 @@ public class PlayerMovement : MonoBehaviour
             Vector3.up * halfCapsule;
 
         float movementDistance =
-            moveSpeed * Time.deltaTime +
+            combatStats.HeroMoveSpeed *
+            Time.deltaTime +
             enemyCheckDistance;
 
         return Physics.CapsuleCast(

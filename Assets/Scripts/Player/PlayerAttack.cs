@@ -2,66 +2,23 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [Header("Attack Settings")]
-    [SerializeField] private float attackRadius = 4f;
+    [Header("Technical Attack Settings")]
+    [SerializeField]
+    private float rotationSpeed = 720f;
 
-    [SerializeField, Min(0.01f)]
-    private float attackWindup = 0.2f;
-
-    [SerializeField] private float rotationSpeed = 720f;
 
     [Header("Combat Stats")]
-    [SerializeField] private CombatStats combatStats;
+    [SerializeField]
+    private CombatStats combatStats;
+
 
     [Header("Projectile Settings")]
-    [SerializeField] private Projectile projectilePrefab;
-    [SerializeField] private Transform attackPoint;
+    [SerializeField]
+    private Projectile projectilePrefab;
 
-    [Header("Double Shot Run Upgrade")]
-    [SerializeField, Range(0.01f, 1f)]
-    private float doubleShotProjectileDamageMultiplier = 0.85f;
+    [SerializeField]
+    private Transform attackPoint;
 
-    [SerializeField, Min(0f)]
-    private float doubleShotWindupPenalty = 0.1f;
-
-    [SerializeField, Min(1f)]
-    private float doubleShotAttackIntervalMultiplier = 1.10f;
-
-    [SerializeField, Min(0f)]
-    private float doubleShotProjectileOffset = 0.08f;
-
-    [Header("Ricochet Run Upgrade")]
-    [SerializeField, Min(0.1f)]
-    private float ricochetSearchRadius = 4f;
-
-    [Header("Poison Run Upgrade")]
-    [SerializeField, Range(0f, 1f)]
-    private float poisonPrimaryApplyChance = 0.50f;
-
-    [SerializeField, Range(0f, 1f)]
-    private float poisonRicochetApplyChance = 0.33f;
-
-    [SerializeField, Range(0.001f, 1f)]
-    private float poisonDamageMultiplier = 0.05f;
-
-    [SerializeField, Min(0.1f)]
-    private float poisonDuration = 5f;
-
-    [SerializeField, Min(0.1f)]
-    private float poisonTickInterval = 2.5f;
-
-    [Header("Stun Run Upgrade")]
-    [SerializeField, Range(0f, 1f)]
-    private float stunPrimaryApplyChance = 0.10f;
-
-    [SerializeField, Range(0f, 1f)]
-    private float stunRicochetApplyChance = 0.05f;
-
-    [SerializeField, Min(0.1f)]
-    private float stunFirstDuration = 1f;
-
-    [SerializeField, Min(0.1f)]
-    private float stunSecondDuration = 2f;
 
     [Header("Debug Stun Testing")]
     [Tooltip(
@@ -71,40 +28,65 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField]
     private bool forceStunProcForDebug;
 
-    [Header("Slow Run Upgrade")]
-    [SerializeField, Range(0f, 0.95f)]
-    private float slowFirstPercent = 0.15f;
-
-    [SerializeField, Range(0f, 0.95f)]
-    private float slowSecondPercent = 0.30f;
-
-    [SerializeField, Min(0.1f)]
-    private float slowDuration = 2f;
 
     [Header("Animation Settings")]
-    [SerializeField] private PlayerAttackAnimation attackAnimation;
+    [SerializeField]
+    private PlayerAttackAnimation attackAnimation;
+
 
     [Header("Target Settings")]
-    [SerializeField] private LayerMask enemyLayer;
+    [SerializeField]
+    private LayerMask enemyLayer;
+
 
     [Header("Diagnostics")]
-    [SerializeField] private bool logShotDamage;
+    [SerializeField]
+    private bool logShotDamage;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private bool debugAttackDelayed;
-    [SerializeField] private float debugAttackDelayTimer;
-    [SerializeField] private float currentAttackInterval;
-    [SerializeField] private float currentAttackWindup;
-    [SerializeField] private bool debugDoubleShotEnabled;
-    [SerializeField] private int debugRicochetStacks;
-    [SerializeField] private int debugRicochetExtraTargets;
-    [SerializeField] private float debugRicochetDamagePercent;
-    [SerializeField] private bool debugPoisonEnabled;
-    [SerializeField] private int debugStunStacks;
-    [SerializeField] private float debugStunDuration;
-    [SerializeField] private int debugSlowStacks;
-    [SerializeField] private float debugSlowPercent;
-    [SerializeField] private float debugSlowDuration;
+    [SerializeField]
+    private bool debugAttackDelayed;
+
+    [SerializeField]
+    private float debugAttackDelayTimer;
+
+    [SerializeField]
+    private float currentAttackInterval;
+
+    [SerializeField]
+    private float currentAttackWindup;
+
+    [SerializeField]
+    private bool debugDoubleShotEnabled;
+
+    [SerializeField]
+    private int debugRicochetStacks;
+
+    [SerializeField]
+    private int debugRicochetExtraTargets;
+
+    [SerializeField]
+    private float debugRicochetDamagePercent;
+
+    [SerializeField]
+    private bool debugPoisonEnabled;
+
+    [SerializeField]
+    private int debugStunStacks;
+
+    [SerializeField]
+    private float debugStunDuration;
+
+    [SerializeField]
+    private int debugSlowStacks;
+
+    [SerializeField]
+    private float debugSlowPercent;
+
+    [SerializeField]
+    private float debugSlowDuration;
+
 
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
@@ -113,11 +95,73 @@ public class PlayerAttack : MonoBehaviour
     private float attackDelayTimer;
 
     private bool attackAnimationStarted;
+
+
+    // =========================================================
+    // DOUBLE SHOT RUNTIME STATE
+    // =========================================================
+
     private bool doubleShotEnabled;
+
+    private float doubleShotProjectileDamageMultiplier = 1f;
+    private float doubleShotWindupPenalty;
+    private float doubleShotAttackIntervalMultiplier = 1f;
+    private float doubleShotProjectileOffset;
+
+
+    // =========================================================
+    // RICOCHET RUNTIME STATE
+    // =========================================================
+
     private int ricochetStacks;
+
+    private int currentRicochetExtraTargets;
+
+    private float currentRicochetDamageMultiplier;
+
+    private float ricochetSearchRadius;
+
+
+    // =========================================================
+    // POISON RUNTIME STATE
+    // =========================================================
+
     private bool poisonEnabled;
+
+    private float poisonPrimaryApplyChance;
+
+    private float poisonRicochetApplyChance;
+
+    private float poisonDamageMultiplier;
+
+    private float poisonDuration;
+
+    private float poisonTickInterval;
+
+
+    // =========================================================
+    // STUN RUNTIME STATE
+    // =========================================================
+
     private int stunStacks;
+
+    private float stunPrimaryApplyChance;
+
+    private float stunRicochetApplyChance;
+
+    private float currentStunDuration;
+
+
+    // =========================================================
+    // SLOW RUNTIME STATE
+    // =========================================================
+
     private int slowStacks;
+
+    private float currentSlowPercent;
+
+    private float slowDuration;
+
 
     public bool IsAttackDelayed =>
         attackDelayTimer > 0f;
@@ -137,77 +181,18 @@ public class PlayerAttack : MonoBehaviour
     public int SlowStacks =>
         slowStacks;
 
-    private float CurrentSlowPercent
-    {
-        get
-        {
-            if (slowStacks <= 0)
-            {
-                return 0f;
-            }
 
-            if (slowStacks == 1)
-            {
-                return slowFirstPercent;
-            }
+    private float CurrentStunDuration =>
+        stunStacks > 0
+            ? currentStunDuration
+            : 0f;
 
-            return slowSecondPercent;
-        }
-    }
 
-    private float CurrentStunDuration
-    {
-        get
-        {
-            if (stunStacks <= 0)
-            {
-                return 0f;
-            }
+    private float CurrentSlowPercent =>
+        slowStacks > 0
+            ? currentSlowPercent
+            : 0f;
 
-            if (stunStacks == 1)
-            {
-                return stunFirstDuration;
-            }
-
-            return stunSecondDuration;
-        }
-    }
-
-    private int CurrentRicochetExtraTargets
-    {
-        get
-        {
-            if (ricochetStacks <= 0)
-            {
-                return 0;
-            }
-
-            if (ricochetStacks == 1)
-            {
-                return 1;
-            }
-
-            return 2;
-        }
-    }
-
-    private float CurrentRicochetDamageMultiplier
-    {
-        get
-        {
-            if (ricochetStacks <= 0)
-            {
-                return 0f;
-            }
-
-            if (ricochetStacks >= 3)
-            {
-                return 0.66f;
-            }
-
-            return 0.33f;
-        }
-    }
 
     private void Start()
     {
@@ -228,8 +213,22 @@ public class PlayerAttack : MonoBehaviour
             return;
         }
 
+        if (combatStats.HeroAttackRadius <= 0f ||
+            combatStats.HeroProjectileSpeed <= 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Hero attack balance values " +
+                "must be positive. Check GameBalanceConfig.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         ResetAttackCycle();
     }
+
 
     private void Update()
     {
@@ -302,6 +301,7 @@ public class PlayerAttack : MonoBehaviour
             false;
     }
 
+
     private void LateUpdate()
     {
         debugAttackDelayed =
@@ -317,10 +317,10 @@ public class PlayerAttack : MonoBehaviour
             ricochetStacks;
 
         debugRicochetExtraTargets =
-            CurrentRicochetExtraTargets;
+            currentRicochetExtraTargets;
 
         debugRicochetDamagePercent =
-            CurrentRicochetDamageMultiplier *
+            currentRicochetDamageMultiplier *
             100f;
 
         debugPoisonEnabled =
@@ -336,13 +336,15 @@ public class PlayerAttack : MonoBehaviour
             slowStacks;
 
         debugSlowPercent =
-            CurrentSlowPercent * 100f;
+            CurrentSlowPercent *
+            100f;
 
         debugSlowDuration =
             slowStacks > 0
                 ? slowDuration
                 : 0f;
     }
+
 
     private void RefreshAttackTiming()
     {
@@ -362,7 +364,7 @@ public class PlayerAttack : MonoBehaviour
             );
 
         float baseWindup =
-            attackWindup;
+            combatStats.HeroBaseAttackWindup;
 
         if (doubleShotEnabled)
         {
@@ -382,7 +384,17 @@ public class PlayerAttack : MonoBehaviour
             );
     }
 
-    public bool TryEnableDoubleShot()
+
+    // =========================================================
+    // DOUBLE SHOT
+    // =========================================================
+
+    public bool TryEnableDoubleShot(
+        float projectileDamageMultiplier,
+        float attackIntervalMultiplier,
+        float windupPenalty,
+        float projectileOffset
+    )
     {
         if (!Application.isPlaying)
         {
@@ -399,7 +411,46 @@ public class PlayerAttack : MonoBehaviour
             return false;
         }
 
-        doubleShotEnabled = true;
+        if (projectileDamageMultiplier <= 0f ||
+            attackIntervalMultiplier < 1f ||
+            windupPenalty < 0f ||
+            projectileOffset < 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Double Shot balance values.",
+                this
+            );
+
+            return false;
+        }
+
+        doubleShotProjectileDamageMultiplier =
+            Mathf.Clamp(
+                projectileDamageMultiplier,
+                0.01f,
+                1f
+            );
+
+        doubleShotAttackIntervalMultiplier =
+            Mathf.Max(
+                1f,
+                attackIntervalMultiplier
+            );
+
+        doubleShotWindupPenalty =
+            Mathf.Max(
+                0f,
+                windupPenalty
+            );
+
+        doubleShotProjectileOffset =
+            Mathf.Max(
+                0f,
+                projectileOffset
+            );
+
+        doubleShotEnabled =
+            true;
 
         ResetAttackCycle();
 
@@ -410,47 +461,118 @@ public class PlayerAttack : MonoBehaviour
             $"Attack interval multiplier = " +
             $"{doubleShotAttackIntervalMultiplier:F2}. " +
             $"Windup penalty = " +
-            $"{doubleShotWindupPenalty:F2} s.",
+            $"{doubleShotWindupPenalty:F2} s. " +
+            $"Projectile offset = " +
+            $"{doubleShotProjectileOffset:F2}.",
             this
         );
 
         return true;
     }
 
-    public bool TryUpgradeRicochet()
+
+    // =========================================================
+    // RICOCHET
+    // =========================================================
+
+    public bool TryUpgradeRicochet(
+        int stackNumber,
+        int maximumStacks,
+        int extraTargets,
+        float damageMultiplier,
+        float searchRadius
+    )
     {
         if (!Application.isPlaying)
         {
             return false;
         }
 
-        if (ricochetStacks >= 3)
+        int expectedStack =
+            ricochetStacks + 1;
+
+        if (stackNumber != expectedStack)
         {
-            Debug.LogWarning(
-                "PlayerAttack: Ricochet already reached 3/3.",
+            Debug.LogError(
+                "PlayerAttack: Ricochet stack order mismatch. " +
+                $"Expected {expectedStack}, received {stackNumber}.",
                 this
             );
 
             return false;
         }
 
-        ricochetStacks++;
+        if (maximumStacks <= 0 ||
+            stackNumber <= 0 ||
+            stackNumber > maximumStacks)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Ricochet stack values.",
+                this
+            );
+
+            return false;
+        }
+
+        if (extraTargets < 0 ||
+            damageMultiplier <= 0f ||
+            searchRadius <= 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Ricochet balance values.",
+                this
+            );
+
+            return false;
+        }
+
+        ricochetStacks =
+            stackNumber;
+
+        currentRicochetExtraTargets =
+            Mathf.Max(
+                0,
+                extraTargets
+            );
+
+        currentRicochetDamageMultiplier =
+            Mathf.Clamp01(
+                damageMultiplier
+            );
+
+        ricochetSearchRadius =
+            Mathf.Max(
+                0.1f,
+                searchRadius
+            );
 
         Debug.Log(
             "PlayerAttack: Ricochet upgraded to " +
-            $"{ricochetStacks}/3. " +
+            $"{ricochetStacks}/{maximumStacks}. " +
             $"Extra targets = " +
-            $"{CurrentRicochetExtraTargets}. " +
+            $"{currentRicochetExtraTargets}. " +
             $"Ricochet damage = " +
-            $"{CurrentRicochetDamageMultiplier * 100f:F0}%. " +
-            $"Search radius = {ricochetSearchRadius:F2}.",
+            $"{currentRicochetDamageMultiplier * 100f:F0}%. " +
+            $"Search radius = " +
+            $"{ricochetSearchRadius:F2}.",
             this
         );
 
         return true;
     }
 
-    public bool TryEnablePoison()
+
+    // =========================================================
+    // POISON
+    // =========================================================
+
+    public bool TryEnablePoison(
+        float primaryApplyChance,
+        float ricochetApplyChance,
+        float damageMultiplier,
+        float duration,
+        float tickInterval
+    )
     {
         if (!Application.isPlaying)
         {
@@ -467,7 +589,54 @@ public class PlayerAttack : MonoBehaviour
             return false;
         }
 
-        poisonEnabled = true;
+        if (primaryApplyChance < 0f ||
+            primaryApplyChance > 1f ||
+            ricochetApplyChance < 0f ||
+            ricochetApplyChance > 1f ||
+            damageMultiplier <= 0f ||
+            damageMultiplier > 1f ||
+            duration <= 0f ||
+            tickInterval <= 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Poison balance values.",
+                this
+            );
+
+            return false;
+        }
+
+        poisonPrimaryApplyChance =
+            Mathf.Clamp01(
+                primaryApplyChance
+            );
+
+        poisonRicochetApplyChance =
+            Mathf.Clamp01(
+                ricochetApplyChance
+            );
+
+        poisonDamageMultiplier =
+            Mathf.Clamp(
+                damageMultiplier,
+                0.001f,
+                1f
+            );
+
+        poisonDuration =
+            Mathf.Max(
+                0.1f,
+                duration
+            );
+
+        poisonTickInterval =
+            Mathf.Max(
+                0.1f,
+                tickInterval
+            );
+
+        poisonEnabled =
+            true;
 
         Debug.Log(
             "PlayerAttack: Poison enabled. " +
@@ -486,28 +655,86 @@ public class PlayerAttack : MonoBehaviour
         return true;
     }
 
-    public bool TryUpgradeStun()
+
+    // =========================================================
+    // STUN
+    // =========================================================
+
+    public bool TryUpgradeStun(
+        int stackNumber,
+        int maximumStacks,
+        float primaryApplyChance,
+        float ricochetApplyChance,
+        float duration
+    )
     {
         if (!Application.isPlaying)
         {
             return false;
         }
 
-        if (stunStacks >= 2)
+        int expectedStack =
+            stunStacks + 1;
+
+        if (stackNumber != expectedStack)
         {
-            Debug.LogWarning(
-                "PlayerAttack: Stun already reached 2/2.",
+            Debug.LogError(
+                "PlayerAttack: Stun stack order mismatch. " +
+                $"Expected {expectedStack}, received {stackNumber}.",
                 this
             );
 
             return false;
         }
 
-        stunStacks++;
+        if (maximumStacks <= 0 ||
+            stackNumber <= 0 ||
+            stackNumber > maximumStacks)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Stun stack values.",
+                this
+            );
+
+            return false;
+        }
+
+        if (primaryApplyChance < 0f ||
+            primaryApplyChance > 1f ||
+            ricochetApplyChance < 0f ||
+            ricochetApplyChance > 1f ||
+            duration <= 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Stun balance values.",
+                this
+            );
+
+            return false;
+        }
+
+        stunStacks =
+            stackNumber;
+
+        stunPrimaryApplyChance =
+            Mathf.Clamp01(
+                primaryApplyChance
+            );
+
+        stunRicochetApplyChance =
+            Mathf.Clamp01(
+                ricochetApplyChance
+            );
+
+        currentStunDuration =
+            Mathf.Max(
+                0.1f,
+                duration
+            );
 
         Debug.Log(
             "PlayerAttack: Stun upgraded to " +
-            $"{stunStacks}/2. " +
+            $"{stunStacks}/{maximumStacks}. " +
             $"Primary apply chance = " +
             $"{stunPrimaryApplyChance * 100f:F0}%. " +
             $"Ricochet apply chance = " +
@@ -520,28 +747,80 @@ public class PlayerAttack : MonoBehaviour
         return true;
     }
 
-    public bool TryUpgradeSlow()
+
+    // =========================================================
+    // SLOW
+    // =========================================================
+
+    public bool TryUpgradeSlow(
+        int stackNumber,
+        int maximumStacks,
+        float movementReductionPercent,
+        float duration
+    )
     {
         if (!Application.isPlaying)
         {
             return false;
         }
 
-        if (slowStacks >= 2)
+        int expectedStack =
+            slowStacks + 1;
+
+        if (stackNumber != expectedStack)
         {
-            Debug.LogWarning(
-                "PlayerAttack: Slow already reached 2/2.",
+            Debug.LogError(
+                "PlayerAttack: Slow stack order mismatch. " +
+                $"Expected {expectedStack}, received {stackNumber}.",
                 this
             );
 
             return false;
         }
 
-        slowStacks++;
+        if (maximumStacks <= 0 ||
+            stackNumber <= 0 ||
+            stackNumber > maximumStacks)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Slow stack values.",
+                this
+            );
+
+            return false;
+        }
+
+        if (movementReductionPercent <= 0f ||
+            movementReductionPercent > 0.95f ||
+            duration <= 0f)
+        {
+            Debug.LogError(
+                "PlayerAttack: Invalid Slow balance values.",
+                this
+            );
+
+            return false;
+        }
+
+        slowStacks =
+            stackNumber;
+
+        currentSlowPercent =
+            Mathf.Clamp(
+                movementReductionPercent,
+                0.01f,
+                0.95f
+            );
+
+        slowDuration =
+            Mathf.Max(
+                0.1f,
+                duration
+            );
 
         Debug.Log(
             "PlayerAttack: Slow upgraded to " +
-            $"{slowStacks}/2. " +
+            $"{slowStacks}/{maximumStacks}. " +
             $"Movement reduction = " +
             $"{CurrentSlowPercent * 100f:F0}%. " +
             $"Duration = {slowDuration:F2} s. " +
@@ -551,6 +830,11 @@ public class PlayerAttack : MonoBehaviour
 
         return true;
     }
+
+
+    // =========================================================
+    // ATTACK DELAY
+    // =========================================================
 
     public void StartAttackDelay(
         float duration
@@ -577,6 +861,7 @@ public class PlayerAttack : MonoBehaviour
         );
     }
 
+
     private bool UpdateAttackDelay()
     {
         if (attackDelayTimer <= 0f)
@@ -594,12 +879,17 @@ public class PlayerAttack : MonoBehaviour
         return true;
     }
 
+
+    // =========================================================
+    // TARGETING
+    // =========================================================
+
     private Collider FindNearestEnemy()
     {
         Collider[] enemiesInRange =
             Physics.OverlapSphere(
                 transform.position,
-                attackRadius,
+                combatStats.HeroAttackRadius,
                 enemyLayer
             );
 
@@ -634,6 +924,11 @@ public class PlayerAttack : MonoBehaviour
         return nearestEnemy;
     }
 
+
+    // =========================================================
+    // ATTACK CYCLE
+    // =========================================================
+
     private void ResetAttackCycle()
     {
         if (combatStats != null)
@@ -649,9 +944,11 @@ public class PlayerAttack : MonoBehaviour
 
         if (attackAnimation != null)
         {
-            attackAnimation.ResetAnimation();
+            attackAnimation
+                .ResetAnimation();
         }
     }
+
 
     private void StartAttackAnimation()
     {
@@ -666,6 +963,7 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+
     private void RotateTowardsEnemy(
         Collider enemy
     )
@@ -674,7 +972,8 @@ public class PlayerAttack : MonoBehaviour
             enemy.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
         if (direction.sqrMagnitude <
             0.001f)
@@ -695,6 +994,11 @@ public class PlayerAttack : MonoBehaviour
                 Time.deltaTime
             );
     }
+
+
+    // =========================================================
+    // FIRE
+    // =========================================================
 
     private void AttackEnemy(
         EnemyHealth enemyHealth
@@ -722,27 +1026,33 @@ public class PlayerAttack : MonoBehaviour
                 this
             );
 
-            enabled = false;
+            enabled =
+                false;
+
             return;
         }
 
         float critChancePercent =
-            combatStats.HeroCritChancePercent;
+            combatStats
+                .HeroCritChancePercent;
 
         bool isCritical;
 
         if (critChancePercent >= 100f)
         {
-            isCritical = true;
+            isCritical =
+                true;
         }
         else if (critChancePercent <= 0f)
         {
-            isCritical = false;
+            isCritical =
+                false;
         }
         else
         {
             float probability =
-                critChancePercent / 100f;
+                critChancePercent /
+                100f;
 
             isCritical =
                 Random.value <
@@ -752,7 +1062,8 @@ public class PlayerAttack : MonoBehaviour
         if (isCritical)
         {
             calculatedDamage *=
-                combatStats.HeroCritDamageMultiplier;
+                combatStats
+                    .HeroCritDamageMultiplier;
         }
 
         if (doubleShotEnabled)
@@ -770,11 +1081,15 @@ public class PlayerAttack : MonoBehaviour
             );
 
         int projectileCount =
-            doubleShotEnabled ? 2 : 1;
+            doubleShotEnabled
+                ? 2
+                : 1;
 
-        for (int i = 0;
-             i < projectileCount;
-             i++)
+        for (
+            int i = 0;
+            i < projectileCount;
+            i++
+        )
         {
             Vector3 spawnPosition =
                 attackPoint.position;
@@ -782,11 +1097,15 @@ public class PlayerAttack : MonoBehaviour
             if (doubleShotEnabled)
             {
                 float side =
-                    i == 0 ? -1f : 1f;
+                    i == 0
+                        ? -1f
+                        : 1f;
 
                 spawnPosition +=
-                    attackPoint.right *
-                    doubleShotProjectileOffset *
+                    attackPoint.right
+                    *
+                    doubleShotProjectileOffset
+                    *
                     side;
             }
 
@@ -800,8 +1119,9 @@ public class PlayerAttack : MonoBehaviour
             projectile.Initialize(
                 enemyHealth,
                 shotDamage,
-                CurrentRicochetExtraTargets,
-                CurrentRicochetDamageMultiplier,
+                combatStats.HeroProjectileSpeed,
+                currentRicochetExtraTargets,
+                currentRicochetDamageMultiplier,
                 ricochetSearchRadius,
                 enemyLayer,
                 logShotDamage,
@@ -827,13 +1147,15 @@ public class PlayerAttack : MonoBehaviour
             Debug.Log(
                 $"PlayerAttack: Shot damage = {shotDamage}. " +
                 $"Projectiles = {projectileCount}. " +
+                $"Projectile speed = " +
+                $"{combatStats.HeroProjectileSpeed:F2}. " +
                 $"Potential primary damage = " +
                 $"{shotDamage * projectileCount}. " +
                 $"Ricochet stacks = {ricochetStacks}. " +
                 $"Ricochet targets = " +
-                $"{CurrentRicochetExtraTargets}. " +
+                $"{currentRicochetExtraTargets}. " +
                 $"Ricochet damage = " +
-                $"{CurrentRicochetDamageMultiplier * 100f:F0}%. " +
+                $"{currentRicochetDamageMultiplier * 100f:F0}%. " +
                 $"Poison = {poisonEnabled}. " +
                 $"Stun stacks = {stunStacks}. " +
                 $"Stun duration = {CurrentStunDuration:F2}. " +

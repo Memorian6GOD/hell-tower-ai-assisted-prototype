@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class BossMediumLineAttack : MonoBehaviour
 {
-    [Header("Damage Settings")]
-    [SerializeField] private int playerDamage = 45;
-    [SerializeField] private int coreTowerDamage = 120;
+    // Runtime design values are supplied by BossBalanceBinder
+    // from GameBalanceConfig before Start().
+    private int playerDamage;
+    private int coreTowerDamage;
 
-    [Header("Area Settings")]
-    [SerializeField] private float lineLength = 8f;
-    [SerializeField] private float lineWidth = 2.5f;
-    [SerializeField] private float attackHeight = 3f;
+    private float lineLength;
+    private float lineWidth;
+    private float attackHeight;
 
     [Header("Visual Settings")]
     [SerializeField] private GameObject attackIndicator;
@@ -25,8 +25,54 @@ public class BossMediumLineAttack : MonoBehaviour
     private Vector3 lockedAttackCenter;
     private Quaternion lockedAttackRotation;
 
+    private bool balanceConfigured;
+    private bool hasStarted;
+
+    public bool ConfigureBalance(
+        BossMediumLineAttackBalanceValues balance
+    )
+    {
+        if (hasStarted ||
+            balance == null)
+        {
+            return false;
+        }
+
+        playerDamage =
+            balance.PlayerDamage;
+
+        coreTowerDamage =
+            balance.CoreTowerDamage;
+
+        lineLength =
+            balance.LineLength;
+
+        lineWidth =
+            balance.LineWidth;
+
+        attackHeight =
+            balance.AttackHeight;
+
+        balanceConfigured = true;
+        return true;
+    }
+
     private void Start()
     {
+        hasStarted = true;
+
+        if (!balanceConfigured)
+        {
+            Debug.LogError(
+                "BossMediumLineAttack: Boss attack balance was not " +
+                "configured before Start().",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         playerHealth =
             FindAnyObjectByType<PlayerHealth>();
 

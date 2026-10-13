@@ -5,6 +5,7 @@ public class PreWavePreparationManager : MonoBehaviour
 {
     [Header("System References")]
     [SerializeField] private WaveManager waveManager;
+    [SerializeField] private GameBalanceConfig balanceConfig;
 
     [SerializeField]
     private DefenseTowerPlacement
@@ -30,10 +31,6 @@ public class PreWavePreparationManager : MonoBehaviour
     [SerializeField] private GameObject defenseTowerBuildGrid;
 
     [Header("Preparation Settings")]
-    [SerializeField] private float preparationDuration = 30f;
-    [SerializeField] private float waveStartDelay = 2f;
-    [SerializeField] private int availableTowerSlots = 1;
-
     [SerializeField]
     private bool startPreparationOnStart = true;
 
@@ -188,10 +185,7 @@ public class PreWavePreparationManager : MonoBehaviour
         HideCoreTowerHealthUI();
 
         remainingTime =
-            Mathf.Max(
-                0f,
-                preparationDuration
-            );
+            balanceConfig.PreWavePreparationDuration;
 
         waveStartDelayRemaining = 0f;
 
@@ -203,6 +197,9 @@ public class PreWavePreparationManager : MonoBehaviour
         ShowTimer();
         ShowBuildGrid();
         UpdateTimerText();
+
+        int availableTowerSlots =
+            balanceConfig.BaseAvailableDefenseTowerSlots;
 
         towerPlacement.OpenPlacement(
             availableTowerSlots
@@ -329,10 +326,7 @@ public class PreWavePreparationManager : MonoBehaviour
         ShowPlayer();
 
         waveStartDelayRemaining =
-            Mathf.Max(
-                0f,
-                waveStartDelay
-            );
+            balanceConfig.FirstWaveStartDelay;
 
         isWaveStartDelayActive = true;
 
@@ -561,6 +555,16 @@ public class PreWavePreparationManager : MonoBehaviour
             referencesAreValid = false;
         }
 
+        if (balanceConfig == null)
+        {
+            Debug.LogWarning(
+                "PreWavePreparationManager: " +
+                "Game Balance Config is not assigned."
+            );
+
+            referencesAreValid = false;
+        }
+
         if (towerPlacement == null)
         {
             Debug.LogWarning(
@@ -682,27 +686,6 @@ public class PreWavePreparationManager : MonoBehaviour
         }
 
         return referencesAreValid;
-    }
-
-    private void OnValidate()
-    {
-        preparationDuration =
-            Mathf.Max(
-                0f,
-                preparationDuration
-            );
-
-        waveStartDelay =
-            Mathf.Max(
-                0f,
-                waveStartDelay
-            );
-
-        availableTowerSlots =
-            Mathf.Max(
-                1,
-                availableTowerSlots
-            );
     }
 
     private void OnDisable()

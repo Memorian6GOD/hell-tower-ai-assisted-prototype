@@ -12,17 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 600a0ada453e75f4492b82665aaf50b4, type: 3}
   m_Name: PermanentProgressionConfig
   m_EditorClassIdentifier: Assembly-CSharp::PermanentProgressionConfig
-  purchasesPerRequiredBranch: 10
-  heroDamagePerPurchase: 2
-  heroDamageStartingPrice: 100
-  heroDamagePriceIncreasePerPurchase: 75
-  heroCriticalChancePointsPerPurchase: 0.5
-  heroCriticalChanceStartingPrice: 100
-  heroCriticalChancePriceIncreasePerPurchase: 75
-  heroAttackSpeedPercentPerPurchase: 2
-  heroAttackSpeedStartingPrice: 100
-  heroAttackSpeedPriceIncreasePerPurchase: 75
-  sharedMaxHealthPurchasesPerHeroLevel: 5
-  sharedMaxHealthPercentPerPurchase: 5
-  sharedMaxHealthStartingPrice: 100
-  sharedMaxHealthPriceIncreasePerPurchase: 75
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}

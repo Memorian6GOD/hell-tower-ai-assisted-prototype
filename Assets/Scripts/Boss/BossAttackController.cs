@@ -21,30 +21,24 @@ public class BossAttackController : MonoBehaviour
     [SerializeField]
     private BossLongZonesAttack longZonesAttack;
 
-    [Header("Fight Start Settings")]
-    [SerializeField] private float initialAttackDelay = 2f;
+    // Runtime balance values are supplied by BossBalanceBinder
+    // from GameBalanceConfig before Start().
+    private float initialAttackDelay;
+    private bool requireMediumAttackBeforeLong;
 
-    [Header("Attack Unlock Settings")]
-    [SerializeField]
-    private bool requireMediumAttackBeforeLong = true;
+    private float meleeAttackRange;
+    private float mediumAttackRange;
+    private float longAttackRange;
 
-    [Header("Attack Range Settings")]
-    [SerializeField] private float meleeAttackRange = 3f;
-    [SerializeField] private float mediumAttackRange = 7f;
-    [SerializeField] private float longAttackRange = 20f;
+    private float meleeAttackCooldown;
+    private float mediumAttackCooldown;
+    private float longAttackCooldown;
 
-    [Header("Attack Cooldown Settings")]
-    [SerializeField] private float meleeAttackCooldown = 3f;
-    [SerializeField] private float mediumAttackCooldown = 5f;
-    [SerializeField] private float longAttackCooldown = 7f;
+    private float meleeAttackWindup;
+    private float mediumAttackWindup;
+    private float longAttackWindup;
 
-    [Header("Attack Windup Settings")]
-    [SerializeField] private float meleeAttackWindup = 0.6f;
-    [SerializeField] private float mediumAttackWindup = 1f;
-    [SerializeField] private float longAttackWindup = 1.2f;
-
-    [Header("Recovery Settings")]
-    [SerializeField] private float recoveryDuration = 0.8f;
+    private float recoveryDuration;
 
     [Header("Debug - Do Not Edit")]
     [SerializeField] private bool debugIsAttacking;
@@ -83,6 +77,8 @@ public class BossAttackController : MonoBehaviour
     private float postContinueAttackDelayTimer;
 
     private bool hasExecutedMediumAttack;
+    private bool balanceConfigured;
+    private bool hasStarted;
 
     public bool IsAttacking { get; private set; }
 
@@ -105,8 +101,72 @@ public class BossAttackController : MonoBehaviour
     public bool IsPostContinueAttackDelayed =>
         postContinueAttackDelayTimer > 0f;
 
+    public bool ConfigureBalance(
+        BossCoreBalanceValues balance
+    )
+    {
+        if (hasStarted ||
+            balance == null)
+        {
+            return false;
+        }
+
+        initialAttackDelay =
+            balance.InitialAttackDelay;
+
+        requireMediumAttackBeforeLong =
+            balance.RequireMediumAttackBeforeLong;
+
+        meleeAttackRange =
+            balance.MeleeAttackRange;
+
+        mediumAttackRange =
+            balance.MediumAttackRange;
+
+        longAttackRange =
+            balance.LongAttackRange;
+
+        meleeAttackCooldown =
+            balance.MeleeAttackCooldown;
+
+        mediumAttackCooldown =
+            balance.MediumAttackCooldown;
+
+        longAttackCooldown =
+            balance.LongAttackCooldown;
+
+        meleeAttackWindup =
+            balance.MeleeAttackWindup;
+
+        mediumAttackWindup =
+            balance.MediumAttackWindup;
+
+        longAttackWindup =
+            balance.LongAttackWindup;
+
+        recoveryDuration =
+            balance.RecoveryDuration;
+
+        balanceConfigured = true;
+        return true;
+    }
+
     private void Start()
     {
+        hasStarted = true;
+
+        if (!balanceConfigured)
+        {
+            Debug.LogError(
+                "BossAttackController: Boss balance was not " +
+                "configured before Start().",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         bossMovement =
             GetComponent<BossMovement>();
 

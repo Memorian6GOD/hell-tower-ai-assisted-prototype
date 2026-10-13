@@ -2,17 +2,28 @@ using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
 {
-    [Header("Attack Settings")]
-    [SerializeField] private int attackDamage = 50;
-    [SerializeField] private float attackInterval = 1f;
-    [SerializeField] private float attackWindup = 0.5f;
+    [Header("Fallback Settings - Central Balance Overrides These")]
+
+    [SerializeField]
+    private int attackDamage = 50;
+
+    [SerializeField]
+    private float attackInterval = 1f;
+
+    [SerializeField]
+    private float attackWindup = 0.5f;
 
     [Header("Animation Settings")]
-    [SerializeField] private EnemyAttackAnimation attackAnimation;
+    [SerializeField]
+    private EnemyAttackAnimation attackAnimation;
 
     [Header("Hit Effect")]
-    [SerializeField] private HitEffect hitEffectPrefab;
-    [SerializeField] private float hitEffectOffset = 0.15f;
+    [SerializeField]
+    private HitEffect hitEffectPrefab;
+
+    [SerializeField]
+    private float hitEffectOffset = 0.15f;
+
 
     private EnemyMovement enemyMovement;
 
@@ -23,28 +34,81 @@ public class EnemyAttack : MonoBehaviour
     private Collider playerCollider;
 
     private float attackTimer;
+
     private bool attackAnimationStarted;
     private bool damageMultiplierApplied;
+    private bool hasStarted;
 
-    void Start()
+
+    public bool ConfigureBaseAttack(
+        int newAttackDamage,
+        float newAttackInterval,
+        float newAttackWindup
+    )
     {
-        enemyMovement = GetComponent<EnemyMovement>();
+        if (hasStarted ||
+            damageMultiplierApplied)
+        {
+            return false;
+        }
 
-        coreTower = FindAnyObjectByType<CoreTowerHealth>();
+        if (newAttackDamage <= 0 ||
+            newAttackInterval <= 0f ||
+            newAttackWindup < 0f)
+        {
+            return false;
+        }
+
+        attackDamage =
+            Mathf.Max(
+                1,
+                newAttackDamage
+            );
+
+        attackInterval =
+            Mathf.Max(
+                0.01f,
+                newAttackInterval
+            );
+
+        attackWindup =
+            Mathf.Clamp(
+                newAttackWindup,
+                0f,
+                attackInterval
+            );
+
+        return true;
+    }
+
+
+    private void Start()
+    {
+        hasStarted = true;
+
+        enemyMovement =
+            GetComponent<EnemyMovement>();
+
+        coreTower =
+            FindAnyObjectByType<CoreTowerHealth>();
 
         if (coreTower != null)
         {
-            coreTowerCollider = coreTower.GetComponent<Collider>();
+            coreTowerCollider =
+                coreTower.GetComponent<Collider>();
         }
 
-        playerHealth = FindAnyObjectByType<PlayerHealth>();
+        playerHealth =
+            FindAnyObjectByType<PlayerHealth>();
 
         if (playerHealth != null)
         {
-            playerCollider = playerHealth.GetComponent<Collider>();
+            playerCollider =
+                playerHealth.GetComponent<Collider>();
         }
 
-        attackTimer = attackWindup;
+        attackTimer =
+            attackWindup;
 
         if (enemyMovement == null)
         {
@@ -82,7 +146,8 @@ public class EnemyAttack : MonoBehaviour
         }
     }
 
-    void Update()
+
+    private void Update()
     {
         if (enemyMovement == null)
         {
@@ -101,7 +166,8 @@ public class EnemyAttack : MonoBehaviour
             return;
         }
 
-        attackTimer -= Time.deltaTime;
+        attackTimer -=
+            Time.deltaTime;
 
         if (!attackAnimationStarted &&
             attackTimer <= attackWindup)
@@ -116,11 +182,17 @@ public class EnemyAttack : MonoBehaviour
 
         AttackCurrentTarget();
 
-        attackTimer = attackInterval;
-        attackAnimationStarted = false;
+        attackTimer =
+            attackInterval;
+
+        attackAnimationStarted =
+            false;
     }
 
-    public void ApplyDamageMultiplier(float damageMultiplier)
+
+    public void ApplyDamageMultiplier(
+        float damageMultiplier
+    )
     {
         if (damageMultiplierApplied)
         {
@@ -140,15 +212,19 @@ public class EnemyAttack : MonoBehaviour
             return;
         }
 
-        attackDamage = Mathf.Max(
-            1,
-            Mathf.CeilToInt(
-                attackDamage * damageMultiplier
-            )
-        );
+        attackDamage =
+            Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    attackDamage *
+                    damageMultiplier
+                )
+            );
 
-        damageMultiplierApplied = true;
+        damageMultiplierApplied =
+            true;
     }
+
 
     private bool CanAttackCurrentTarget()
     {
@@ -177,6 +253,7 @@ public class EnemyAttack : MonoBehaviour
         return true;
     }
 
+
     private void AttackCurrentTarget()
     {
         if (enemyMovement.IsTargetingPlayer)
@@ -189,6 +266,7 @@ public class EnemyAttack : MonoBehaviour
         }
     }
 
+
     private void AttackPlayer()
     {
         if (playerHealth == null ||
@@ -199,7 +277,9 @@ public class EnemyAttack : MonoBehaviour
         }
 
         Vector3 hitPosition =
-            GetHitPosition(playerCollider);
+            GetHitPosition(
+                playerCollider
+            );
 
         Debug.Log(
             "Enemy attacks Player for " +
@@ -207,10 +287,15 @@ public class EnemyAttack : MonoBehaviour
             " damage."
         );
 
-        playerHealth.TakeDamage(attackDamage);
+        playerHealth.TakeDamage(
+            attackDamage
+        );
 
-        SpawnHitEffect(hitPosition);
+        SpawnHitEffect(
+            hitPosition
+        );
     }
+
 
     private void AttackCoreTower()
     {
@@ -221,7 +306,9 @@ public class EnemyAttack : MonoBehaviour
         }
 
         Vector3 hitPosition =
-            GetHitPosition(coreTowerCollider);
+            GetHitPosition(
+                coreTowerCollider
+            );
 
         Debug.Log(
             "Enemy attacks Core Tower for " +
@@ -229,22 +316,34 @@ public class EnemyAttack : MonoBehaviour
             " damage."
         );
 
-        coreTower.TakeDamage(attackDamage);
+        coreTower.TakeDamage(
+            attackDamage
+        );
 
-        SpawnHitEffect(hitPosition);
+        SpawnHitEffect(
+            hitPosition
+        );
     }
 
-    private Vector3 GetHitPosition(Collider targetCollider)
+
+    private Vector3 GetHitPosition(
+        Collider targetCollider
+    )
     {
         Vector3 hitPosition =
-            targetCollider.ClosestPoint(transform.position);
+            targetCollider.ClosestPoint(
+                transform.position
+            );
 
         Vector3 outwardDirection =
-            transform.position - hitPosition;
+            transform.position -
+            hitPosition;
 
-        outwardDirection.y = 0f;
+        outwardDirection.y =
+            0f;
 
-        if (outwardDirection.sqrMagnitude > 0.001f)
+        if (outwardDirection.sqrMagnitude >
+            0.001f)
         {
             hitPosition +=
                 outwardDirection.normalized *
@@ -254,7 +353,10 @@ public class EnemyAttack : MonoBehaviour
         return hitPosition;
     }
 
-    private void SpawnHitEffect(Vector3 hitPosition)
+
+    private void SpawnHitEffect(
+        Vector3 hitPosition
+    )
     {
         if (hitEffectPrefab == null)
         {
@@ -268,20 +370,28 @@ public class EnemyAttack : MonoBehaviour
         );
     }
 
+
     private void StartAttackAnimation()
     {
-        attackAnimationStarted = true;
+        attackAnimationStarted =
+            true;
 
         if (attackAnimation != null)
         {
-            attackAnimation.Play(attackWindup);
+            attackAnimation.Play(
+                attackWindup
+            );
         }
     }
 
+
     private void ResetAttackCycle()
     {
-        attackTimer = attackWindup;
-        attackAnimationStarted = false;
+        attackTimer =
+            attackWindup;
+
+        attackAnimationStarted =
+            false;
 
         if (attackAnimation != null)
         {

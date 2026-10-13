@@ -4,40 +4,51 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class BetweenWaveRewardManager : MonoBehaviour
 {
+    [Header("Master Balance Source")]
+    [SerializeField]
+    private GameBalanceConfig balanceConfig;
+
     [Header("System References")]
-    [SerializeField] private WaveManager waveManager;
+    [SerializeField]
+    private WaveManager waveManager;
 
     [SerializeField]
     private RunUpgradeSelectionUI runUpgradeSelectionUI;
 
     [Header("Health References")]
-    [SerializeField] private PlayerHealth playerHealth;
-    [SerializeField] private CoreTowerHealth coreTowerHealth;
+    [SerializeField]
+    private PlayerHealth playerHealth;
 
-    [Header("Reward Settings")]
-    [SerializeField, Range(0f, 100f)]
-    private float healthRestorePercent = 25f;
-
-    [SerializeField, Min(0f)]
-    private float nextWaveDelay = 0.5f;
-
-    [SerializeField, Min(0f)]
-    private float healthRewardDelay = 2f;
+    [SerializeField]
+    private CoreTowerHealth coreTowerHealth;
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private bool isResolvingReward;
-    [SerializeField] private int lastCompletedWave;
-    [SerializeField] private int lastHeroHealthRestored;
-    [SerializeField] private int lastCoreTowerHealthRestored;
+    [SerializeField]
+    private bool isResolvingReward;
+
+    [SerializeField]
+    private int lastCompletedWave;
+
+    [SerializeField]
+    private int lastHeroHealthRestored;
+
+    [SerializeField]
+    private int lastCoreTowerHealthRestored;
+
+    [SerializeField]
+    private BetweenWaveRewardType lastResolvedRewardType;
 
     private bool waveEventSubscribed;
     private Coroutine continueRoutine;
 
-    public bool IsResolvingReward => isResolvingReward;
+    public bool IsResolvingReward =>
+        isResolvingReward;
+
 
     private void Awake()
     {
         ResolveReferences();
+        ValidateBalanceConfig();
     }
 
     private void OnEnable()
@@ -46,18 +57,36 @@ public class BetweenWaveRewardManager : MonoBehaviour
         SubscribeToWaveEvent();
     }
 
-    private void HandleWaveCompleted(int completedWave)
+    private void HandleWaveCompleted(
+        int completedWave
+    )
     {
-        lastCompletedWave = completedWave;
+        lastCompletedWave =
+            completedWave;
 
         if (waveManager == null ||
             completedWave >= waveManager.TotalWaves)
         {
             isResolvingReward = false;
+            lastResolvedRewardType =
+                BetweenWaveRewardType.None;
 
             Debug.Log(
                 "BetweenWaveRewardManager: Final wave " +
                 "completed. No next wave will be started.",
+                this
+            );
+
+            return;
+        }
+
+        if (balanceConfig == null)
+        {
+            isResolvingReward = false;
+
+            Debug.LogError(
+                "BetweenWaveRewardManager: GameBalanceConfig " +
+                "is not assigned.",
                 this
             );
 
@@ -77,78 +106,140 @@ public class BetweenWaveRewardManager : MonoBehaviour
 
         isResolvingReward = true;
 
-        if (IsHealthRewardWave(completedWave))
-        {
-            RestoreHealthReward(completedWave);
-            BeginNextWaveAfterDelay(healthRewardDelay);
-            return;
-        }
+        BetweenWaveRewardType rewardType =
+            balanceConfig.GetBetweenWaveRewardType(
+                completedWave
+            );
 
-        if (TryGetUpgradeCategory(
-                completedWave,
-                out RunUpgradeCategory category
-            ))
+        lastResolvedRewardType =
+            rewardType;
+
+        switch (rewardType)
         {
-            if (runUpgradeSelectionUI == null)
-            {
-                Debug.LogError(
-                    "BetweenWaveRewardManager: Assign " +
-                    "RunUpgradeSelectionUI.",
-                    this
+            case BetweenWaveRewardType.HealthRestore:
+                RestoreHealthReward(
+                    completedWave
                 );
-            }
-            else if (runUpgradeSelectionUI.TryOpenSelection(
-                    category,
-                    HandleUpgradeSelectionCompleted
-                ))
-            {
-                Debug.Log(
-                    "BetweenWaveRewardManager: Waiting for " +
-                    $"the wave {completedWave} upgrade choice.",
-                    this
+
+                BeginNextWaveAfterDelay(
+                    balanceConfig
+                        .BetweenWaveHealthRewardDelay
                 );
 
                 return;
-            }
 
-            Debug.Log(
-                "BetweenWaveRewardManager: No upgrade " +
-                "selection was opened for " +
-                $"{category}. The next wave will continue.",
-                this
-            );
+            case BetweenWaveRewardType.HeroUpgrade:
+                if (TryOpenUpgradeSelection(
+                        completedWave,
+                        RunUpgradeCategory.Hero
+                    ))
+                {
+                    return;
+                }
+
+                break;
+
+            case BetweenWaveRewardType.DefenseTowerUpgrade:
+                if (TryOpenUpgradeSelection(
+                        completedWave,
+                        RunUpgradeCategory.DefenseTower
+                    ))
+                {
+                    return;
+                }
+
+                break;
         }
 
-        BeginNextWaveAfterDelay(nextWaveDelay);
+        BeginNextWaveAfterDelay(
+            balanceConfig.BetweenWaveNextWaveDelay
+        );
+    }
+
+    private bool TryOpenUpgradeSelection(
+        int completedWave,
+        RunUpgradeCategory category
+    )
+    {
+        if (runUpgradeSelectionUI == null)
+        {
+            Debug.LogError(
+                "BetweenWaveRewardManager: Assign " +
+                "RunUpgradeSelectionUI.",
+                this
+            );
+
+            return false;
+        }
+
+        if (runUpgradeSelectionUI.TryOpenSelection(
+                category,
+                HandleUpgradeSelectionCompleted
+            ))
+        {
+            Debug.Log(
+                "BetweenWaveRewardManager: Waiting for " +
+                $"the wave {completedWave} upgrade choice.",
+                this
+            );
+
+            return true;
+        }
+
+        Debug.Log(
+            "BetweenWaveRewardManager: No upgrade " +
+            "selection was opened for " +
+            $"{category}. The next wave will continue.",
+            this
+        );
+
+        return false;
     }
 
     private void HandleUpgradeSelectionCompleted()
     {
-        if (!isResolvingReward)
+        if (!isResolvingReward ||
+            balanceConfig == null)
         {
             return;
         }
 
-        BeginNextWaveAfterDelay(nextWaveDelay);
+        BeginNextWaveAfterDelay(
+            balanceConfig.BetweenWaveNextWaveDelay
+        );
     }
 
-    private void RestoreHealthReward(int completedWave)
+    private void RestoreHealthReward(
+        int completedWave
+    )
     {
-        lastHeroHealthRestored = playerHealth != null
-            ? playerHealth.RestoreHealthPercent(
-                healthRestorePercent
-            )
-            : 0;
+        if (balanceConfig == null)
+        {
+            return;
+        }
 
-        lastCoreTowerHealthRestored = coreTowerHealth != null
-            ? coreTowerHealth.RestoreHealthPercent(
-                healthRestorePercent
-            )
-            : 0;
+        float restorePercent =
+            balanceConfig
+                .BetweenWaveHealthRestorePercent;
+
+        lastHeroHealthRestored =
+            playerHealth != null
+                ? playerHealth.RestoreHealthPercent(
+                    restorePercent
+                )
+                : 0;
+
+        lastCoreTowerHealthRestored =
+            coreTowerHealth != null
+                ? coreTowerHealth.RestoreHealthPercent(
+                    restorePercent
+                )
+                : 0;
 
         Debug.Log(
             "BetweenWaveRewardManager: Wave " +
             $"{completedWave} health reward resolved. " +
+            $"Restore percent = {restorePercent:F1}%. " +
             $"Hero restored {lastHeroHealthRestored} HP. " +
             "CoreTower restored " +
             $"{lastCoreTowerHealthRestored} HP.",
@@ -156,23 +247,37 @@ public class BetweenWaveRewardManager : MonoBehaviour
         );
     }
 
-    private void BeginNextWaveAfterDelay(float delay)
+    private void BeginNextWaveAfterDelay(
+        float delay
+    )
     {
         if (continueRoutine != null)
         {
-            StopCoroutine(continueRoutine);
+            StopCoroutine(
+                continueRoutine
+            );
         }
 
-        continueRoutine = StartCoroutine(
-            ContinueToNextWave(delay)
-        );
+        continueRoutine =
+            StartCoroutine(
+                ContinueToNextWave(
+                    Mathf.Max(
+                        0f,
+                        delay
+                    )
+                )
+            );
     }
 
-    private IEnumerator ContinueToNextWave(float delay)
+    private IEnumerator ContinueToNextWave(
+        float delay
+    )
     {
         if (delay > 0f)
         {
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSeconds(
+                delay
+            );
         }
 
         continueRoutine = null;
@@ -184,7 +289,9 @@ public class BetweenWaveRewardManager : MonoBehaviour
             yield break;
         }
 
-        bool waveStarted = waveManager.TryStartWave();
+        bool waveStarted =
+            waveManager.TryStartWave();
+
         isResolvingReward = false;
 
         if (!waveStarted)
@@ -197,47 +304,12 @@ public class BetweenWaveRewardManager : MonoBehaviour
         }
     }
 
-    private static bool IsHealthRewardWave(int completedWave)
-    {
-        return completedWave == 5 || completedWave == 10;
-    }
-
-    private static bool TryGetUpgradeCategory(
-        int completedWave,
-        out RunUpgradeCategory category
-    )
-    {
-        switch (completedWave)
-        {
-            case 1:
-            case 3:
-            case 6:
-            case 8:
-            case 11:
-            case 13:
-                category = RunUpgradeCategory.Hero;
-                return true;
-
-            case 2:
-            case 4:
-            case 7:
-            case 9:
-            case 12:
-            case 14:
-                category = RunUpgradeCategory.DefenseTower;
-                return true;
-
-            default:
-                category = RunUpgradeCategory.Hero;
-                return false;
-        }
-    }
-
     private void ResolveReferences()
     {
         if (waveManager == null)
         {
-            waveManager = FindAnyObjectByType<WaveManager>();
+            waveManager =
+                FindAnyObjectByType<WaveManager>();
         }
 
         if (runUpgradeSelectionUI == null)
@@ -248,7 +320,8 @@ public class BetweenWaveRewardManager : MonoBehaviour
 
         if (playerHealth == null)
         {
-            playerHealth = FindAnyObjectByType<PlayerHealth>();
+            playerHealth =
+                FindAnyObjectByType<PlayerHealth>();
         }
 
         if (coreTowerHealth == null)
@@ -258,18 +331,37 @@ public class BetweenWaveRewardManager : MonoBehaviour
         }
     }
 
-    private void SubscribeToWaveEvent()
+    private void ValidateBalanceConfig()
     {
-        if (waveEventSubscribed || waveManager == null)
+        if (balanceConfig != null)
         {
             return;
         }
 
-        waveManager.WaveCompleted += HandleWaveCompleted;
+        Debug.LogError(
+            "BetweenWaveRewardManager: Assign " +
+            "GameBalanceConfig.",
+            this
+        );
+    }
+
+    private void SubscribeToWaveEvent()
+    {
+        if (waveEventSubscribed ||
+            waveManager == null)
+        {
+            return;
+        }
+
+        waveManager.WaveCompleted +=
+            HandleWaveCompleted;
+
         waveEventSubscribed = true;
     }
 
-    [ContextMenu("Test Rewards/Open Tower Upgrade Selection")]
+    [ContextMenu(
+        "Test Rewards/Open Tower Upgrade Selection"
+    )]
     private void TestOpenTowerUpgradeSelection()
     {
         if (!Application.isPlaying)
@@ -288,7 +380,9 @@ public class BetweenWaveRewardManager : MonoBehaviour
         }
     }
 
-    [ContextMenu("Test Rewards/Restore Health")]
+    [ContextMenu(
+        "Test Rewards/Restore Health"
+    )]
     private void TestRestoreHealthReward()
     {
         if (!Application.isPlaying)
@@ -297,30 +391,23 @@ public class BetweenWaveRewardManager : MonoBehaviour
         }
 
         ResolveReferences();
-        RestoreHealthReward(5);
+        RestoreHealthReward(
+            5
+        );
     }
 
     private void UnsubscribeFromWaveEvent()
     {
-        if (!waveEventSubscribed || waveManager == null)
+        if (!waveEventSubscribed ||
+            waveManager == null)
         {
             return;
         }
 
-        waveManager.WaveCompleted -= HandleWaveCompleted;
+        waveManager.WaveCompleted -=
+            HandleWaveCompleted;
+
         waveEventSubscribed = false;
-    }
-
-    private void OnValidate()
-    {
-        healthRestorePercent = Mathf.Clamp(
-            healthRestorePercent,
-            0f,
-            100f
-        );
-
-        nextWaveDelay = Mathf.Max(0f, nextWaveDelay);
-        healthRewardDelay = Mathf.Max(0f, healthRewardDelay);
     }
 
     private void OnDisable()
@@ -329,7 +416,10 @@ public class BetweenWaveRewardManager : MonoBehaviour
 
         if (continueRoutine != null)
         {
-            StopCoroutine(continueRoutine);
+            StopCoroutine(
+                continueRoutine
+            );
+
             continueRoutine = null;
         }
 

@@ -813,161 +813,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WaveManager
   enemySpawner: {fileID: 1073089735}
   bossFightManager: {fileID: 1624952358}
-  totalWaves: 15
-  waves:
-  - waveName: Wave 1
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.3
-  - waveName: Wave 2
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 7
-      spawnInterval: 1.3
-  - waveName: Wave 3
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.3
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 3
-      spawnInterval: 2
-  - waveName: Wave 4
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 6
-      spawnInterval: 1.3
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 5
-      spawnInterval: 2
-  - waveName: Wave 5
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.5
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 4
-      spawnInterval: 2
-    - enemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
-      enemyCount: 1
-      spawnInterval: 5
-  - waveName: Wave 6
-    healthMultiplier: 1.1
-    damageMultiplier: 1.05
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 6
-      spawnInterval: 1.1
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.5
-  - waveName: Wave 7
-    healthMultiplier: 1.1
-    damageMultiplier: 1.05
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 7
-      spawnInterval: 1
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.4
-  - waveName: Wave 8
-    healthMultiplier: 1.1
-    damageMultiplier: 1.05
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 6
-      spawnInterval: 1
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 5
-      spawnInterval: 1.4
-    - enemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
-      enemyCount: 2
-      spawnInterval: 2.2
-  - waveName: Wave 9
-    healthMultiplier: 1.1
-    damageMultiplier: 1.05
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 6
-      spawnInterval: 0.9
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 6
-      spawnInterval: 1.2
-  - waveName: Wave 10
-    healthMultiplier: 1.1
-    damageMultiplier: 1.05
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 10
-      spawnInterval: 0.9
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 8
-      spawnInterval: 1.2
-  - waveName: Wave 11
-    healthMultiplier: 1.2
-    damageMultiplier: 1.1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 7
-      spawnInterval: 0.9
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 6
-      spawnInterval: 1.2
-    - enemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
-      enemyCount: 3
-      spawnInterval: 1.4
-  - waveName: Wave 12
-    healthMultiplier: 1.2
-    damageMultiplier: 1.1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 10
-      spawnInterval: 0.8
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 7
-      spawnInterval: 1.1
-  - waveName: Wave 13
-    healthMultiplier: 1.2
-    damageMultiplier: 1.1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 11
-      spawnInterval: 0.8
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 7
-      spawnInterval: 1
-  - waveName: Wave 14
-    healthMultiplier: 1.2
-    damageMultiplier: 1.1
-    enemyGroups:
-    - enemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
-      enemyCount: 9
-      spawnInterval: 0.8
-    - enemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
-      enemyCount: 6
-      spawnInterval: 1
-    - enemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
-      enemyCount: 4
-      spawnInterval: 1.3
-  - waveName: Wave 15
-    healthMultiplier: 1
-    damageMultiplier: 1
-    enemyGroups:
-    - enemyPrefab: {fileID: 4860089283288767153, guid: 91b0421aa9ede0d44bb056b0f84b0ae7, type: 3}
-      enemyCount: 1
-      spawnInterval: 2
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
+  meleeEnemyPrefab: {fileID: 7433334293409252831, guid: c48758b536b22624d9901c2397938ed0, type: 3}
+  rangedEnemyPrefab: {fileID: 7433334293409252831, guid: a32cd04e9f6e4d14493178ec1ae3a4bf, type: 3}
+  strongEnemyPrefab: {fileID: 1295509278883190651, guid: 2dc2faaee9ef7e74086347272a528450, type: 3}
+  siegeEnemyPrefab: {fileID: 0}
   bossPrefab: {fileID: 4860089283288767153, guid: 91b0421aa9ede0d44bb056b0f84b0ae7, type: 3}
 --- !u!4 &329377296
 Transform:
@@ -3009,17 +2859,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CombatStats
   balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   playerProgression: {fileID: 1295724595}
-  permanentDamageBonus: 0
-  permanentAttackSpeedBonusPercent: 0
-  permanentCritChanceBonusPoints: 0
-  permanentHeroMaxHealthBonus: 0
-  permanentCoreTowerMaxHealthBonus: 0
-  permanentDefenseTowerMaxHealthBonus: 0
-  heroDamageBonusPercent: 0
-  towerDamageBonusPercent: 0
-  heroAttackSpeedBonusPercent: 0
-  towerAttackSpeedBonusPercent: 0
-  heroCritChanceBonusPercent: 0
 --- !u!4 &1295724594
 Transform:
   m_ObjectHideFlags: 0
@@ -3048,6 +2887,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProgression
   progressionConfig: {fileID: 11400000, guid: caae8dcbfa5e7614dbba30d589681129, type: 2}
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   debugSaveFilePath: 
   debugGold: 0
   debugHeroLevel: 0
@@ -3084,102 +2924,10 @@ MonoBehaviour:
   playerProgression: {fileID: 1295724595}
   playerHealth: {fileID: 2079961573}
   playerAttack: {fileID: 0}
-  unlockHeroLevel: 2
-  offeredOptionCount: 2
-  upgradeDefinitions:
-  - upgradeType: 0
-    displayName: DAMAGE
-    description: +10% hero damage
-    bonusPercent: 10
-    maximumStacks: 3
-  - upgradeType: 1
-    displayName: ATTACK SPEED
-    description: +10% hero attack speed
-    bonusPercent: 10
-    maximumStacks: 3
-  - upgradeType: 2
-    displayName: TOWER DAMAGE
-    description: Increases defense tower damage by 10%.
-    bonusPercent: 10
-    maximumStacks: 3
-  - upgradeType: 3
-    displayName: TOWER ATTACK SPEED
-    description: Increases defense tower attack speed by 10%.
-    bonusPercent: 10
-    maximumStacks: 3
-  - upgradeType: 4
-    displayName: POWERFUL DAMAGE
-    description: +20% hero damage
-    bonusPercent: 20
-    maximumStacks: 2
-  - upgradeType: 5
-    displayName: RAPID ATTACK
-    description: +20% hero attack speed
-    bonusPercent: 20
-    maximumStacks: 2
-  - upgradeType: 6
-    displayName: POWERFUL TOWER
-    description: Increases defense tower damage by 20%.
-    bonusPercent: 20
-    maximumStacks: 2
-  - upgradeType: 7
-    displayName: RAPID TOWER
-    description: Increases defense tower attack speed by 20%.
-    bonusPercent: 20
-    maximumStacks: 2
-  - upgradeType: 8
-    displayName: CRITICAL CHANCE
-    description: Increases hero critical chance.
-    bonusPercent: 20
-    maximumStacks: 3
-  - upgradeType: 9
-    displayName: DEADLY PRECISION
-    description: Greatly increases hero critical chance.
-    bonusPercent: 40
-    maximumStacks: 2
-  - upgradeType: 10
-    displayName: VITALITY
-    description: Increases hero maximum health.
-    bonusPercent: 7
-    maximumStacks: 3
-  - upgradeType: 11
-    displayName: GREATER VITALITY
-    description: Greatly increases hero maximum health.
-    bonusPercent: 15
-    maximumStacks: 2
-  - upgradeType: 12
-    displayName: DOUBLE SHOT
-    description: Fires two projectiles at the same target. Each projectile deals
-      reduced damage and the attack takes longer to prepare.
-    bonusPercent: 85
-    maximumStacks: 1
-  - upgradeType: 13
-    displayName: RICOCHET
-    description: Projectiles bounce to additional enemies. Further stacks improve
-      the number of targets and ricochet damage.
-    bonusPercent: 33
-    maximumStacks: 3
-  - upgradeType: 14
-    displayName: POISON
-    description: Projectile hits can poison enemies and deal damage over time. Ricochet
-      hits have a lower chance to apply poison.
-    bonusPercent: 50
-    maximumStacks: 1
-  - upgradeType: 15
-    displayName: STUN
-    description: Projectile hits can briefly stop enemies. A second stack increases
-      the stun duration.
-    bonusPercent: 20
-    maximumStacks: 2
-  - upgradeType: 16
-    displayName: SLOW
-    description: Projectile hits slow enemy movement. A second stack increases the
-      movement reduction.
-    bonusPercent: 15
-    maximumStacks: 2
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   useDebugTestPool: 0
   debugTestCategory: 0
-  debugTestUpgradeTypes: 100000000f000000
+  debugTestUpgradeTypes: 10000000
   selectionInProgress: 0
   debugCurrentCategory: 0
   debugHeroDamageStacks: 0
@@ -3212,17 +2960,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4567686a87c02984494483892666de5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BetweenWaveRewardManager
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   waveManager: {fileID: 329377295}
   runUpgradeSelectionUI: {fileID: 1939099328}
   playerHealth: {fileID: 2079961573}
   coreTowerHealth: {fileID: 301995903}
-  healthRestorePercent: 25
-  nextWaveDelay: 0.5
-  healthRewardDelay: 2
   isResolvingReward: 0
   lastCompletedWave: 0
   lastHeroHealthRestored: 0
   lastCoreTowerHealthRestored: 0
+  lastResolvedRewardType: 0
 --- !u!1 &1323950012
 GameObject:
   m_ObjectHideFlags: 0
@@ -3930,10 +3677,7 @@ MonoBehaviour:
   bossDialogue: {fileID: 0}
   gameManager: {fileID: 866854503}
   startFightOnStart: 0
-  continueHealthPercent: 100
-  playerAttackDelay: 3
-  bossMovementDelay: 2
-  bossAttackDelay: 3
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   debugFightState: 2
   debugContinueUsed: 0
   debugContinueAvailable: 1
@@ -4245,6 +3989,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PreWavePreparationManager
   waveManager: {fileID: 329377295}
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   towerPlacement: {fileID: 1910395285}
   playerRoot: {fileID: 1067606416}
   playerSpawnPoint: {fileID: 1474400758}
@@ -4257,9 +4002,6 @@ MonoBehaviour:
   coreTowerHealthUI: {fileID: 1680822007}
   runUpgradeSelectionUI: {fileID: 1939099328}
   defenseTowerBuildGrid: {fileID: 1323950012}
-  preparationDuration: 20
-  waveStartDelay: 2
-  availableTowerSlots: 1
   startPreparationOnStart: 1
   isPreparationActive: 0
   isWaveStartDelayActive: 0

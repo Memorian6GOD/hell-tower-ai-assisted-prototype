@@ -3,15 +3,21 @@ using UnityEngine;
 
 public class Projectile : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 12f;
-    [SerializeField] private float hitDistance = 0.2f;
+    [SerializeField]
+    private float hitDistance = 0.2f;
 
     [Header("Hit Effect")]
-    [SerializeField] private GameObject hitEffectPrefab;
-    [SerializeField] private float hitEffectOffset = 0.5f;
+    [SerializeField]
+    private GameObject hitEffectPrefab;
+
+    [SerializeField]
+    private float hitEffectOffset = 0.5f;
 
     private EnemyHealth target;
     private int damage;
+
+    private float moveSpeed;
+    private bool initialized;
 
     private int initialDamage;
     private int ricochetsRemaining;
@@ -43,16 +49,22 @@ public class Projectile : MonoBehaviour
     private readonly HashSet<EnemyHealth>
         visitedTargets = new();
 
-    // Kept for towers and older callers that do not use
-    // hero run-upgrade projectile effects.
+
+    // =========================================================
+    // BASIC PROJECTILE
+    // =========================================================
+
+    // Used by Defense Towers.
     public void Initialize(
         EnemyHealth newTarget,
-        int newDamage
+        int newDamage,
+        float newMoveSpeed
     )
     {
         Initialize(
             newTarget,
             newDamage,
+            newMoveSpeed,
             0,
             0f,
             0f,
@@ -75,10 +87,15 @@ public class Projectile : MonoBehaviour
         );
     }
 
-    // Player projectiles use this overload when run upgrades are active.
+
+    // =========================================================
+    // HERO PROJECTILE
+    // =========================================================
+
     public void Initialize(
         EnemyHealth newTarget,
         int newDamage,
+        float newMoveSpeed,
         int newRicochetCount,
         float newRicochetDamageMultiplier,
         float newRicochetSearchRadius,
@@ -100,7 +117,14 @@ public class Projectile : MonoBehaviour
         float newSlowDuration
     )
     {
-        target = newTarget;
+        target =
+            newTarget;
+
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                newMoveSpeed
+            );
 
         damage =
             Mathf.Max(
@@ -120,7 +144,8 @@ public class Projectile : MonoBehaviour
         ricochetTotalAtLaunch =
             ricochetsRemaining;
 
-        ricochetsCompleted = 0;
+        ricochetsCompleted =
+            0;
 
         ricochetDamageMultiplier =
             Mathf.Clamp01(
@@ -215,10 +240,29 @@ public class Projectile : MonoBehaviour
                 target
             );
         }
+
+        initialized =
+            true;
     }
+
+
+    // =========================================================
+    // MOVEMENT
+    // =========================================================
 
     private void Update()
     {
+        if (!initialized)
+        {
+            Debug.LogError(
+                "Projectile: Projectile was spawned but not initialized.",
+                this
+            );
+
+            Destroy(gameObject);
+            return;
+        }
+
         if (target == null)
         {
             Destroy(gameObject);
@@ -229,8 +273,10 @@ public class Projectile : MonoBehaviour
             target.transform.position;
 
         Vector3 direction =
-            (targetPosition -
-             transform.position).normalized;
+            (
+                targetPosition -
+                transform.position
+            ).normalized;
 
         transform.position +=
             direction *
@@ -250,6 +296,11 @@ public class Projectile : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // HIT
+    // =========================================================
+
     private void HitTarget()
     {
         if (target == null)
@@ -267,8 +318,10 @@ public class Projectile : MonoBehaviour
             hitTarget.transform.position;
 
         Vector3 directionFromEnemy =
-            (transform.position -
-             hitTargetPosition).normalized;
+            (
+                transform.position -
+                hitTargetPosition
+            ).normalized;
 
         Vector3 hitEffectPosition =
             hitTargetPosition +
@@ -312,8 +365,15 @@ public class Projectile : MonoBehaviour
             return;
         }
 
-        Destroy(gameObject);
+        Destroy(
+            gameObject
+        );
     }
+
+
+    // =========================================================
+    // POISON
+    // =========================================================
 
     private void TryApplyPoison(
         EnemyHealth hitTarget,
@@ -375,6 +435,11 @@ public class Projectile : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // STUN
+    // =========================================================
+
     private void TryApplyStun(
         EnemyHealth hitTarget,
         bool isRicochetHit
@@ -434,6 +499,11 @@ public class Projectile : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // SLOW
+    // =========================================================
+
     private void TryApplySlow(
         EnemyHealth hitTarget
     )
@@ -465,6 +535,11 @@ public class Projectile : MonoBehaviour
             );
         }
     }
+
+
+    // =========================================================
+    // RICOCHET
+    // =========================================================
 
     private bool TryContinueRicochet(
         Vector3 searchOrigin
@@ -549,8 +624,10 @@ public class Projectile : MonoBehaviour
         float shortestDistance =
             float.MaxValue;
 
-        foreach (Collider nearbyEnemy
-                 in nearbyEnemies)
+        foreach (
+            Collider nearbyEnemy
+            in nearbyEnemies
+        )
         {
             if (nearbyEnemy == null)
             {
@@ -563,7 +640,9 @@ public class Projectile : MonoBehaviour
 
             if (candidate == null ||
                 candidate.IsDead ||
-                visitedTargets.Contains(candidate))
+                visitedTargets.Contains(
+                    candidate
+                ))
             {
                 continue;
             }

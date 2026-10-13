@@ -5,30 +5,66 @@ using UnityEngine.AI;
 public class SiegeEnemyMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 1.5f;
-    [SerializeField] private float rotationSpeed = 270f;
+    [SerializeField]
+    private float moveSpeed = 1.5f;
+
+    [SerializeField]
+    private float rotationSpeed = 270f;
+
 
     [Header("Attack Position Settings")]
-    [SerializeField] private float stopGap = 0.15f;
-    [SerializeField] private float arrivalTolerance = 0.25f;
+    [SerializeField]
+    private float stopGap = 0.15f;
+
+    [SerializeField]
+    private float arrivalTolerance = 0.25f;
+
 
     [Header("Navigation Settings")]
-    [SerializeField] private float repathInterval = 0.1f;
-    [SerializeField] private float targetSearchInterval = 0.25f;
-    [SerializeField] private float navMeshSampleDistance = 2f;
+    [SerializeField]
+    private float repathInterval = 0.1f;
+
+    [SerializeField]
+    private float targetSearchInterval = 0.25f;
+
+    [SerializeField]
+    private float navMeshSampleDistance = 2f;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private string debugCurrentTarget;
-    [SerializeField] private bool debugIsTargetingDefenseTower;
-    [SerializeField] private bool debugIsAtTarget;
-    [SerializeField] private bool debugIsOnNavMesh;
-    [SerializeField] private bool debugAgentIsStopped;
-    [SerializeField] private bool debugHasPath;
-    [SerializeField] private bool debugPathPending;
-    [SerializeField] private float debugRemainingDistance;
-    [SerializeField] private float debugStoppingDistance;
-    [SerializeField] private float debugVelocity;
-    [SerializeField] private NavMeshPathStatus debugPathStatus;
+    [SerializeField]
+    private string debugCurrentTarget;
+
+    [SerializeField]
+    private bool debugIsTargetingDefenseTower;
+
+    [SerializeField]
+    private bool debugIsAtTarget;
+
+    [SerializeField]
+    private bool debugIsOnNavMesh;
+
+    [SerializeField]
+    private bool debugAgentIsStopped;
+
+    [SerializeField]
+    private bool debugHasPath;
+
+    [SerializeField]
+    private bool debugPathPending;
+
+    [SerializeField]
+    private float debugRemainingDistance;
+
+    [SerializeField]
+    private float debugStoppingDistance;
+
+    [SerializeField]
+    private float debugVelocity;
+
+    [SerializeField]
+    private NavMeshPathStatus debugPathStatus;
+
 
     private NavMeshAgent agent;
     private Collider enemyCollider;
@@ -42,16 +78,26 @@ public class SiegeEnemyMovement : MonoBehaviour
     private float repathTimer;
     private float targetSearchTimer;
 
-    public bool IsAtTarget { get; private set; }
+    private bool hasStarted;
+
+
+    public bool IsAtTarget
+    {
+        get;
+        private set;
+    }
+
 
     public bool IsTargetingDefenseTower
     {
         get
         {
-            return currentDefenseTower != null &&
-                   !currentDefenseTower.IsDestroyed;
+            return
+                currentDefenseTower != null &&
+                !currentDefenseTower.IsDestroyed;
         }
     }
+
 
     public DefenseTowerHealth CurrentDefenseTower
     {
@@ -61,6 +107,7 @@ public class SiegeEnemyMovement : MonoBehaviour
         }
     }
 
+
     public CoreTowerHealth CurrentCoreTower
     {
         get
@@ -68,6 +115,7 @@ public class SiegeEnemyMovement : MonoBehaviour
             return coreTower;
         }
     }
+
 
     public Collider CurrentTargetCollider
     {
@@ -82,38 +130,87 @@ public class SiegeEnemyMovement : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureMoveSpeed(
+        float newMoveSpeed
+    )
+    {
+        if (hasStarted ||
+            newMoveSpeed <= 0f)
+        {
+            return false;
+        }
+
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                newMoveSpeed
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
-        enemyCollider = GetComponent<Collider>();
+        agent =
+            GetComponent<NavMeshAgent>();
+
+        enemyCollider =
+            GetComponent<Collider>();
     }
+
 
     private void Start()
     {
+        hasStarted =
+            true;
+
         FindCoreTower();
-        agent.speed = moveSpeed;
-        agent.angularSpeed = rotationSpeed;
-        agent.acceleration = 20f;
-        agent.autoBraking = true;
-        agent.autoRepath = true;
 
-        agent.updatePosition = true;
-        agent.updateRotation = true;
-        agent.updateUpAxis = true;
+        agent.speed =
+            moveSpeed;
 
-        agent.isStopped = false;
+        agent.angularSpeed =
+            rotationSpeed;
+
+        agent.acceleration =
+            20f;
+
+        agent.autoBraking =
+            true;
+
+        agent.autoRepath =
+            true;
+
+        agent.updatePosition =
+            true;
+
+        agent.updateRotation =
+            true;
+
+        agent.updateUpAxis =
+            true;
+
+        agent.isStopped =
+            false;
 
         agent.obstacleAvoidanceType =
             ObstacleAvoidanceType.HighQualityObstacleAvoidance;
 
         agent.avoidancePriority =
-            Random.Range(20, 81);
-
-        agent.obstacleAvoidanceType =
-            ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-
-        agent.avoidancePriority =
-            Random.Range(20, 81);
+            Random.Range(
+                20,
+                81
+            );
 
         if (enemyCollider != null)
         {
@@ -122,12 +219,16 @@ public class SiegeEnemyMovement : MonoBehaviour
 
             if (enemyRadius > 0f)
             {
-                agent.radius = enemyRadius;
+                agent.radius =
+                    enemyRadius;
             }
         }
 
-        targetSearchTimer = 0f;
-        repathTimer = 0f;
+        targetSearchTimer =
+            0f;
+
+        repathTimer =
+            0f;
 
         if (enemyCollider == null)
         {
@@ -151,12 +252,15 @@ public class SiegeEnemyMovement : MonoBehaviour
         }
     }
 
+
     private void Update()
     {
         if (agent == null ||
             !agent.isOnNavMesh)
         {
-            IsAtTarget = false;
+            IsAtTarget =
+                false;
+
             return;
         }
 
@@ -175,10 +279,16 @@ public class SiegeEnemyMovement : MonoBehaviour
         UpdateCoreTowerTarget();
     }
 
+
     private void LateUpdate()
     {
         UpdateDebugInfo();
     }
+
+
+    // =========================================================
+    // CORE TOWER
+    // =========================================================
 
     private void FindCoreTower()
     {
@@ -200,6 +310,11 @@ public class SiegeEnemyMovement : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // DEFENSE TOWER SEARCH
+    // =========================================================
+
     private void UpdateDefenseTowerSearch()
     {
         if (currentDefenseTower != null &&
@@ -210,7 +325,8 @@ public class SiegeEnemyMovement : MonoBehaviour
 
         ClearDefenseTowerTarget();
 
-        targetSearchTimer -= Time.deltaTime;
+        targetSearchTimer -=
+            Time.deltaTime;
 
         if (targetSearchTimer > 0f)
         {
@@ -223,19 +339,25 @@ public class SiegeEnemyMovement : MonoBehaviour
             targetSearchInterval;
     }
 
+
     private void FindNearestDefenseTower()
     {
         DefenseTowerHealth[] defenseTowers =
             FindObjectsByType<DefenseTowerHealth>();
 
-        DefenseTowerHealth nearestTower = null;
-        Collider nearestTowerCollider = null;
+        DefenseTowerHealth nearestTower =
+            null;
+
+        Collider nearestTowerCollider =
+            null;
 
         float nearestDistanceSqr =
             float.MaxValue;
 
-        foreach (DefenseTowerHealth tower
-                 in defenseTowers)
+        foreach (
+            DefenseTowerHealth tower
+            in defenseTowers
+        )
         {
             if (tower == null ||
                 tower.IsDestroyed)
@@ -266,7 +388,8 @@ public class SiegeEnemyMovement : MonoBehaviour
                 closestPoint -
                 transform.position;
 
-            direction.y = 0f;
+            direction.y =
+                0f;
 
             float distanceSqr =
                 direction.sqrMagnitude;
@@ -277,7 +400,9 @@ public class SiegeEnemyMovement : MonoBehaviour
                 nearestDistanceSqr =
                     distanceSqr;
 
-                nearestTower = tower;
+                nearestTower =
+                    tower;
+
                 nearestTowerCollider =
                     towerCollider;
             }
@@ -293,6 +418,7 @@ public class SiegeEnemyMovement : MonoBehaviour
             nearestTowerCollider
         );
     }
+
 
     private void SetDefenseTowerTarget(
         DefenseTowerHealth defenseTower,
@@ -310,10 +436,15 @@ public class SiegeEnemyMovement : MonoBehaviour
         currentDefenseTower.Destroyed +=
             HandleDefenseTowerDestroyed;
 
-        IsAtTarget = false;
-        repathTimer = 0f;
+        IsAtTarget =
+            false;
 
-        agent.isStopped = false;
+        repathTimer =
+            0f;
+
+        agent.isStopped =
+            false;
+
         agent.ResetPath();
 
         Debug.Log(
@@ -322,6 +453,7 @@ public class SiegeEnemyMovement : MonoBehaviour
             currentDefenseTower.gameObject.name
         );
     }
+
 
     private void HandleDefenseTowerDestroyed(
         DefenseTowerHealth destroyedTower
@@ -335,9 +467,13 @@ public class SiegeEnemyMovement : MonoBehaviour
 
         ClearDefenseTowerTarget();
 
-        targetSearchTimer = 0f;
-        repathTimer = 0f;
+        targetSearchTimer =
+            0f;
+
+        repathTimer =
+            0f;
     }
+
 
     private void ClearDefenseTowerTarget()
     {
@@ -347,11 +483,20 @@ public class SiegeEnemyMovement : MonoBehaviour
                 HandleDefenseTowerDestroyed;
         }
 
-        currentDefenseTower = null;
-        currentDefenseTowerCollider = null;
+        currentDefenseTower =
+            null;
 
-        IsAtTarget = false;
+        currentDefenseTowerCollider =
+            null;
+
+        IsAtTarget =
+            false;
     }
+
+
+    // =========================================================
+    // TARGET MOVEMENT
+    // =========================================================
 
     private void UpdateCoreTowerTarget()
     {
@@ -374,6 +519,7 @@ public class SiegeEnemyMovement : MonoBehaviour
         );
     }
 
+
     private void UpdateCurrentTarget(
         Transform targetTransform,
         Collider targetCollider
@@ -387,11 +533,14 @@ public class SiegeEnemyMovement : MonoBehaviour
         }
 
         if (HasReachedTarget(
-            targetCollider))
+                targetCollider
+            ))
         {
-            IsAtTarget = true;
+            IsAtTarget =
+                true;
 
-            agent.isStopped = true;
+            agent.isStopped =
+                true;
 
             if (agent.hasPath)
             {
@@ -405,10 +554,14 @@ public class SiegeEnemyMovement : MonoBehaviour
             return;
         }
 
-        IsAtTarget = false;
-        agent.isStopped = false;
+        IsAtTarget =
+            false;
 
-        repathTimer -= Time.deltaTime;
+        agent.isStopped =
+            false;
+
+        repathTimer -=
+            Time.deltaTime;
 
         if (repathTimer <= 0f)
         {
@@ -416,9 +569,11 @@ public class SiegeEnemyMovement : MonoBehaviour
                 targetCollider
             );
 
-            repathTimer = repathInterval;
+            repathTimer =
+                repathInterval;
         }
     }
+
 
     private bool HasReachedTarget(
         Collider targetCollider
@@ -433,7 +588,8 @@ public class SiegeEnemyMovement : MonoBehaviour
             closestPoint -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
         float desiredDistance =
             GetEnemyHorizontalRadius() +
@@ -443,6 +599,7 @@ public class SiegeEnemyMovement : MonoBehaviour
         return direction.magnitude <=
                desiredDistance;
     }
+
 
     private void SetDestinationNearTarget(
         Collider targetCollider
@@ -457,7 +614,8 @@ public class SiegeEnemyMovement : MonoBehaviour
             transform.position -
             closestPoint;
 
-        outwardDirection.y = 0f;
+        outwardDirection.y =
+            0f;
 
         if (outwardDirection.sqrMagnitude <
             0.001f)
@@ -466,7 +624,8 @@ public class SiegeEnemyMovement : MonoBehaviour
                 transform.position -
                 targetCollider.bounds.center;
 
-            outwardDirection.y = 0f;
+            outwardDirection.y =
+                0f;
         }
 
         if (outwardDirection.sqrMagnitude <
@@ -487,10 +646,11 @@ public class SiegeEnemyMovement : MonoBehaviour
             );
 
         if (!NavMesh.SamplePosition(
-            desiredPosition,
-            out NavMeshHit hit,
-            navMeshSampleDistance,
-            agent.areaMask))
+                desiredPosition,
+                out NavMeshHit hit,
+                navMeshSampleDistance,
+                agent.areaMask
+            ))
         {
             agent.ResetPath();
             return;
@@ -503,6 +663,7 @@ public class SiegeEnemyMovement : MonoBehaviour
             hit.position
         );
     }
+
 
     private float GetEnemyHorizontalRadius()
     {
@@ -522,6 +683,11 @@ public class SiegeEnemyMovement : MonoBehaviour
         );
     }
 
+
+    // =========================================================
+    // ROTATION
+    // =========================================================
+
     private void RotateTowards(
         Vector3 targetPosition
     )
@@ -530,7 +696,8 @@ public class SiegeEnemyMovement : MonoBehaviour
             targetPosition -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
         if (direction.sqrMagnitude <
             0.001f)
@@ -552,9 +719,15 @@ public class SiegeEnemyMovement : MonoBehaviour
             );
     }
 
+
+    // =========================================================
+    // AGENT
+    // =========================================================
+
     private void StopAgent()
     {
-        IsAtTarget = false;
+        IsAtTarget =
+            false;
 
         if (agent == null ||
             !agent.isOnNavMesh)
@@ -562,9 +735,16 @@ public class SiegeEnemyMovement : MonoBehaviour
             return;
         }
 
-        agent.isStopped = true;
+        agent.isStopped =
+            true;
+
         agent.ResetPath();
     }
+
+
+    // =========================================================
+    // DEBUG
+    // =========================================================
 
     private void UpdateDebugInfo()
     {
@@ -579,8 +759,10 @@ public class SiegeEnemyMovement : MonoBehaviour
             debugCurrentTarget =
                 currentDefenseTower.gameObject.name;
         }
-        else if (coreTower != null &&
-                 !coreTower.IsDestroyed)
+        else if (
+            coreTower != null &&
+            !coreTower.IsDestroyed
+        )
         {
             debugCurrentTarget =
                 coreTower.gameObject.name;
@@ -593,7 +775,9 @@ public class SiegeEnemyMovement : MonoBehaviour
 
         if (agent == null)
         {
-            debugIsOnNavMesh = false;
+            debugIsOnNavMesh =
+                false;
+
             return;
         }
 
@@ -627,8 +811,23 @@ public class SiegeEnemyMovement : MonoBehaviour
             agent.pathStatus;
     }
 
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
     private void OnDisable()
     {
         ClearDefenseTowerTarget();
+    }
+
+
+    private void OnValidate()
+    {
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                moveSpeed
+            );
     }
 }

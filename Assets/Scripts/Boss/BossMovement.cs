@@ -4,12 +4,13 @@ using UnityEngine.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 public class BossMovement : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private float rotationSpeed = 240f;
-    [SerializeField] private float stoppingDistance = 2.2f;
+    // Runtime design values are supplied by BossBalanceBinder
+    // from GameBalanceConfig before Start().
+    private float moveSpeed;
+    private float stoppingDistance;
 
-    [Header("Navigation Settings")]
+    [Header("Technical Movement Settings")]
+    [SerializeField] private float rotationSpeed = 240f;
     [SerializeField] private float repathInterval = 0.1f;
 
     [Header("Debug - Do Not Edit")]
@@ -25,6 +26,8 @@ public class BossMovement : MonoBehaviour
     private NavMeshAgent agent;
 
     private float repathTimer;
+    private bool balanceConfigured;
+    private bool hasStarted;
 
     public bool IsAtPlayer { get; private set; }
     public bool IsMovementLocked { get; private set; }
@@ -35,8 +38,42 @@ public class BossMovement : MonoBehaviour
         private set;
     } = Mathf.Infinity;
 
+    public bool ConfigureBalance(
+        BossCoreBalanceValues balance
+    )
+    {
+        if (hasStarted ||
+            balance == null)
+        {
+            return false;
+        }
+
+        moveSpeed =
+            balance.MoveSpeed;
+
+        stoppingDistance =
+            balance.StoppingDistance;
+
+        balanceConfigured = true;
+        return true;
+    }
+
     private void Start()
     {
+        hasStarted = true;
+
+        if (!balanceConfigured)
+        {
+            Debug.LogError(
+                "BossMovement: Boss balance was not configured " +
+                "before Start().",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         agent = GetComponent<NavMeshAgent>();
 
         playerHealth =

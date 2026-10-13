@@ -2322,7 +2322,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProgression
   progressionConfig: {fileID: 11400000, guid: caae8dcbfa5e7614dbba30d589681129, type: 2}
-  debugLoaded: 0
+  balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   debugSaveFilePath: 
   debugGold: 0
   debugHeroLevel: 0
@@ -2357,17 +2357,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CombatStats
   balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
   playerProgression: {fileID: 1249988244}
-  permanentDamageBonus: 0
-  permanentAttackSpeedBonusPercent: 0
-  permanentCritChanceBonusPoints: 0
-  permanentHeroMaxHealthBonus: 0
-  permanentCoreTowerMaxHealthBonus: 0
-  permanentDefenseTowerMaxHealthBonus: 0
-  heroDamageBonusPercent: 0
-  towerDamageBonusPercent: 0
-  heroAttackSpeedBonusPercent: 0
-  towerAttackSpeedBonusPercent: 0
-  heroCritChanceBonusPercent: 0
 --- !u!4 &1249988246
 Transform:
   m_ObjectHideFlags: 0

@@ -3,13 +3,15 @@ using UnityEngine.AI;
 
 public class BossLongZonesAttack : MonoBehaviour
 {
-    [Header("Damage Settings")]
-    [SerializeField] private int playerDamage = 55;
+    // Runtime design values are supplied by BossBalanceBinder
+    // from GameBalanceConfig before Start().
+    private int playerDamage;
 
-    [Header("Zone Settings")]
-    [SerializeField] private float zoneRadius = 1.75f;
-    [SerializeField] private float randomPlacementRadius = 4f;
-    [SerializeField] private float minimumZoneSpacing = 2.5f;
+    private float zoneRadius;
+    private float randomPlacementRadius;
+    private float minimumZoneSpacing;
+
+    [Header("Technical Zone Placement Settings")]
     [SerializeField] private int randomPositionAttempts = 20;
 
     [Header("Navigation Settings")]
@@ -36,8 +38,51 @@ public class BossLongZonesAttack : MonoBehaviour
     private readonly Vector3[] zonePositions =
         new Vector3[3];
 
+    private bool balanceConfigured;
+    private bool hasStarted;
+
+    public bool ConfigureBalance(
+        BossLongZonesAttackBalanceValues balance
+    )
+    {
+        if (hasStarted ||
+            balance == null)
+        {
+            return false;
+        }
+
+        playerDamage =
+            balance.PlayerDamage;
+
+        zoneRadius =
+            balance.ZoneRadius;
+
+        randomPlacementRadius =
+            balance.RandomPlacementRadius;
+
+        minimumZoneSpacing =
+            balance.MinimumZoneSpacing;
+
+        balanceConfigured = true;
+        return true;
+    }
+
     private void Start()
     {
+        hasStarted = true;
+
+        if (!balanceConfigured)
+        {
+            Debug.LogError(
+                "BossLongZonesAttack: Boss attack balance was not " +
+                "configured before Start().",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         playerHealth =
             FindAnyObjectByType<PlayerHealth>();
 

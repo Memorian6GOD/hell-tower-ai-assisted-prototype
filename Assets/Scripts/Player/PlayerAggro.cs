@@ -2,31 +2,81 @@ using UnityEngine;
 
 public class PlayerAggro : MonoBehaviour
 {
-    [Header("Aggro Settings")]
-    [SerializeField] private float aggroRadius = 4f;
-    [SerializeField] private float disengageRadius = 5f;
+    [Header("Master Balance Source")]
 
-    public float AggroRadius => aggroRadius;
-    public float DisengageRadius => disengageRadius;
+    [SerializeField]
+    private GameBalanceConfig balanceConfig;
 
-    private void Awake()
+
+    public float AggroRadius
     {
-        if (disengageRadius < aggroRadius)
+        get
         {
-            disengageRadius = aggroRadius;
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig.EnemyAggroRadius;
         }
     }
 
+
+    public float DisengageRadius
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig.EnemyDisengageRadius;
+        }
+    }
+
+
+    public float AggroConfirmationTime
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig.EnemyAggroConfirmationTime;
+        }
+    }
+
+
+    private void Awake()
+    {
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "PlayerAggro: GameBalanceConfig is not assigned.",
+                this
+            );
+        }
+    }
+
+
     private void OnDrawGizmosSelected()
     {
+        if (balanceConfig == null)
+        {
+            return;
+        }
+
         Gizmos.DrawWireSphere(
             transform.position,
-            aggroRadius
+            AggroRadius
         );
 
         Gizmos.DrawWireSphere(
             transform.position,
-            disengageRadius
+            DisengageRadius
         );
     }
 }

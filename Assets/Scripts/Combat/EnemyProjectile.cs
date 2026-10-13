@@ -4,14 +4,14 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyProjectile : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 8f;
+    [Header("Technical Settings")]
     [SerializeField] private float lifeTime = 5f;
 
     private Rigidbody projectileRigidbody;
 
     private Vector3 moveDirection;
     private int damage;
+    private float moveSpeed;
 
     private bool isInitialized;
     private bool hasHit;
@@ -62,7 +62,8 @@ public class EnemyProjectile : MonoBehaviour
 
     public void Initialize(
         Vector3 travelDirection,
-        int projectileDamage
+        int projectileDamage,
+        float projectileMoveSpeed
     )
     {
         if (travelDirection.sqrMagnitude <
@@ -77,8 +78,25 @@ public class EnemyProjectile : MonoBehaviour
             return;
         }
 
+        if (projectileMoveSpeed <= 0f)
+        {
+            Debug.LogWarning(
+                "EnemyProjectile: Projectile move speed must be positive."
+            );
+
+            Destroy(gameObject);
+
+            return;
+        }
+
         moveDirection =
             travelDirection.normalized;
+
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                projectileMoveSpeed
+            );
 
         damage =
             Mathf.Max(0, projectileDamage);

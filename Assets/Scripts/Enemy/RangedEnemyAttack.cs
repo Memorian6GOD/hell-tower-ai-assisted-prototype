@@ -9,19 +9,39 @@ public class RangedEnemyAttack : MonoBehaviour
         CoreTower
     }
 
-    [Header("Attack Settings")]
-    [SerializeField] private int attackDamage = 10;
-    [SerializeField] private float attackInterval = 1.5f;
-    [SerializeField] private float attackWindup = 0.5f;
+
+    [Header("Fallback Settings - Central Balance Overrides These")]
+
+    [SerializeField]
+    private int attackDamage = 10;
+
+    [SerializeField]
+    private float attackInterval = 1.5f;
+
+    [SerializeField]
+    private float attackWindup = 0.5f;
+
 
     [Header("Projectile Settings")]
-    [SerializeField] private EnemyProjectile projectilePrefab;
-    [SerializeField] private Transform projectileSpawnPoint;
+
+    [SerializeField]
+    private EnemyProjectile projectilePrefab;
+
+    [SerializeField]
+    private Transform projectileSpawnPoint;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private float debugAttackTimer;
-    [SerializeField] private bool debugIsPreparingShot;
-    [SerializeField] private string debugCurrentTarget;
+
+    [SerializeField]
+    private float debugAttackTimer;
+
+    [SerializeField]
+    private bool debugIsPreparingShot;
+
+    [SerializeField]
+    private string debugCurrentTarget;
+
 
     private RangedEnemyMovement rangedEnemyMovement;
 
@@ -34,11 +54,77 @@ public class RangedEnemyAttack : MonoBehaviour
     private AttackTarget currentAttackTarget;
 
     private float attackTimer;
+
     private bool isPreparingShot;
     private bool damageMultiplierApplied;
+    private bool hasStarted;
+
+    private float projectileSpeed;
+
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureBaseAttack(
+        int newAttackDamage,
+        float newAttackInterval,
+        float newAttackWindup,
+        float newProjectileSpeed
+    )
+    {
+        if (hasStarted ||
+            damageMultiplierApplied)
+        {
+            return false;
+        }
+
+        if (newAttackDamage <= 0 ||
+            newAttackInterval <= 0f ||
+            newAttackWindup < 0f ||
+            newProjectileSpeed <= 0f)
+        {
+            return false;
+        }
+
+        attackDamage =
+            Mathf.Max(
+                1,
+                newAttackDamage
+            );
+
+        attackInterval =
+            Mathf.Max(
+                0.01f,
+                newAttackInterval
+            );
+
+        attackWindup =
+            Mathf.Clamp(
+                newAttackWindup,
+                0f,
+                attackInterval
+            );
+
+        projectileSpeed =
+            Mathf.Max(
+                0.01f,
+                newProjectileSpeed
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Start()
     {
+        hasStarted =
+            true;
+
         rangedEnemyMovement =
             GetComponent<RangedEnemyMovement>();
 
@@ -83,6 +169,18 @@ public class RangedEnemyAttack : MonoBehaviour
             );
         }
 
+        if (projectileSpeed <= 0f)
+        {
+            Debug.LogError(
+                "RangedEnemyAttack: Projectile speed was not configured. " +
+                "Check EnemyBalanceBinder and GameBalanceConfig.",
+                this
+            );
+
+            enabled = false;
+            return;
+        }
+
         if (coreTower == null)
         {
             Debug.LogWarning(
@@ -110,28 +208,8 @@ public class RangedEnemyAttack : MonoBehaviour
                 "RangedEnemyAttack: Player Collider was not found."
             );
         }
-
-        if (attackDamage <= 0)
-        {
-            Debug.LogWarning(
-                "RangedEnemyAttack: Attack Damage must be greater than 0."
-            );
-        }
-
-        if (attackInterval <= 0f)
-        {
-            Debug.LogWarning(
-                "RangedEnemyAttack: Attack Interval must be greater than 0."
-            );
-        }
-
-        if (attackWindup < 0f)
-        {
-            Debug.LogWarning(
-                "RangedEnemyAttack: Attack Windup cannot be negative."
-            );
-        }
     }
+
 
     private void Update()
     {
@@ -158,7 +236,8 @@ public class RangedEnemyAttack : MonoBehaviour
             return;
         }
 
-        if (desiredTarget != currentAttackTarget)
+        if (desiredTarget !=
+            currentAttackTarget)
         {
             currentAttackTarget =
                 desiredTarget;
@@ -166,7 +245,8 @@ public class RangedEnemyAttack : MonoBehaviour
             ResetAttackCycle();
         }
 
-        attackTimer -= Time.deltaTime;
+        attackTimer -=
+            Time.deltaTime;
 
         if (!isPreparingShot &&
             attackTimer <= attackWindup)
@@ -184,14 +264,25 @@ public class RangedEnemyAttack : MonoBehaviour
         FireAtCurrentTarget();
 
         attackTimer =
-            Mathf.Max(0.01f, attackInterval);
+            Mathf.Max(
+                0.01f,
+                attackInterval
+            );
 
-        isPreparingShot = false;
+        isPreparingShot =
+            false;
 
         UpdateDebugInfo();
     }
 
-    public void ApplyDamageMultiplier(float damageMultiplier)
+
+    // =========================================================
+    // WAVE DAMAGE SCALING
+    // =========================================================
+
+    public void ApplyDamageMultiplier(
+        float damageMultiplier
+    )
     {
         if (damageMultiplierApplied)
         {
@@ -211,15 +302,23 @@ public class RangedEnemyAttack : MonoBehaviour
             return;
         }
 
-        attackDamage = Mathf.Max(
-            1,
-            Mathf.CeilToInt(
-                attackDamage * damageMultiplier
-            )
-        );
+        attackDamage =
+            Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    attackDamage *
+                    damageMultiplier
+                )
+            );
 
-        damageMultiplierApplied = true;
+        damageMultiplierApplied =
+            true;
     }
+
+
+    // =========================================================
+    // TARGETING
+    // =========================================================
 
     private AttackTarget GetDesiredAttackTarget()
     {
@@ -244,9 +343,11 @@ public class RangedEnemyAttack : MonoBehaviour
         return AttackTarget.CoreTower;
     }
 
+
     private void BeginShotPreparation()
     {
-        isPreparingShot = true;
+        isPreparingShot =
+            true;
 
         if (currentAttackTarget ==
             AttackTarget.Player)
@@ -255,8 +356,10 @@ public class RangedEnemyAttack : MonoBehaviour
                 "RangedEnemy prepares a shot at Player."
             );
         }
-        else if (currentAttackTarget ==
-                 AttackTarget.CoreTower)
+        else if (
+            currentAttackTarget ==
+            AttackTarget.CoreTower
+        )
         {
             Debug.Log(
                 "RangedEnemy prepares a shot at Core Tower."
@@ -264,13 +367,13 @@ public class RangedEnemyAttack : MonoBehaviour
         }
     }
 
+
     private void FireAtCurrentTarget()
     {
         if (currentAttackTarget ==
             AttackTarget.Player)
         {
             FireAtPlayer();
-
             return;
         }
 
@@ -280,6 +383,7 @@ public class RangedEnemyAttack : MonoBehaviour
             FireAtCoreTower();
         }
     }
+
 
     private void FireAtPlayer()
     {
@@ -299,6 +403,7 @@ public class RangedEnemyAttack : MonoBehaviour
         );
     }
 
+
     private void FireAtCoreTower()
     {
         if (coreTower == null ||
@@ -316,6 +421,7 @@ public class RangedEnemyAttack : MonoBehaviour
         );
     }
 
+
     private void FireProjectile(
         Vector3 targetPosition
     )
@@ -324,7 +430,8 @@ public class RangedEnemyAttack : MonoBehaviour
             targetPosition -
             projectileSpawnPoint.position;
 
-        if (direction.sqrMagnitude < 0.001f)
+        if (direction.sqrMagnitude <
+            0.001f)
         {
             Debug.LogWarning(
                 "RangedEnemyAttack: Projectile direction is too small."
@@ -347,17 +454,32 @@ public class RangedEnemyAttack : MonoBehaviour
 
         projectile.Initialize(
             direction,
-            attackDamage
+            attackDamage,
+            projectileSpeed
         );
     }
+
+
+    // =========================================================
+    // ATTACK CYCLE
+    // =========================================================
 
     private void ResetAttackCycle()
     {
         attackTimer =
-            Mathf.Max(0f, attackWindup);
+            Mathf.Max(
+                0f,
+                attackWindup
+            );
 
-        isPreparingShot = false;
+        isPreparingShot =
+            false;
     }
+
+
+    // =========================================================
+    // DEBUG
+    // =========================================================
 
     private void UpdateDebugInfo()
     {

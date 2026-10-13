@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum RunUpgradeType
 {
@@ -17,42 +18,26 @@ public enum RunUpgradeType
     TowerDamageStrong,
     TowerAttackSpeedStrong,
 
-    // Crit upgrades were added after all existing values
-    // so old serialized data keeps its meaning.
     HeroCrit,
     HeroCritStrong,
 
-    // Health upgrades were added after all existing values
-    // so old serialized data keeps its meaning.
     HeroHealth,
     HeroHealthStrong,
 
-    // Unique hero mechanics were added after all existing values
-    // so old serialized data keeps its meaning.
     HeroDoubleShot,
-
-    // Ricochet was appended after Double Shot
-    // so previously serialized enum values stay unchanged.
     HeroRicochet,
-
-    // Poison was appended after Ricochet
-    // so previously serialized enum values stay unchanged.
     HeroPoison,
-
-    // Stun was appended after Poison
-    // so previously serialized enum values stay unchanged.
     HeroStun,
-
-    // Slow was appended after Stun
-    // so previously serialized enum values stay unchanged.
     HeroSlow
 }
+
 
 public enum RunUpgradeCategory
 {
     Hero,
     DefenseTower
 }
+
 
 [Serializable]
 public sealed class RunUpgradeDefinition
@@ -63,26 +48,115 @@ public sealed class RunUpgradeDefinition
     [SerializeField]
     private string displayName = "UPGRADE";
 
+    [FormerlySerializedAs("description")]
     [SerializeField, TextArea(2, 4)]
-    private string description = "Upgrade description.";
+    private string customDescription =
+        "Upgrade description.";
 
-    [SerializeField, Min(0.01f)]
+    [SerializeField, Min(0f)]
     private float bonusPercent = 10f;
 
     [SerializeField, Range(1, 3)]
     private int maximumStacks = 3;
 
-    public RunUpgradeType UpgradeType => upgradeType;
 
-    public string DisplayName => displayName;
+    public RunUpgradeType UpgradeType =>
+        upgradeType;
 
-    public string Description => description;
+    public string DisplayName =>
+        displayName;
 
-    public float BonusPercent =>
-        Mathf.Max(0.01f, bonusPercent);
+    public bool UsesDefinitionBonusPercent
+    {
+        get
+        {
+            switch (upgradeType)
+            {
+                case RunUpgradeType.HeroDamage:
+                case RunUpgradeType.HeroAttackSpeed:
+                case RunUpgradeType.TowerDamage:
+                case RunUpgradeType.TowerAttackSpeed:
 
-    public int MaximumStacks =>
-        Mathf.Clamp(maximumStacks, 1, 3);
+                case RunUpgradeType.HeroDamageStrong:
+                case RunUpgradeType.HeroAttackSpeedStrong:
+                case RunUpgradeType.TowerDamageStrong:
+                case RunUpgradeType.TowerAttackSpeedStrong:
+
+                case RunUpgradeType.HeroCrit:
+                case RunUpgradeType.HeroCritStrong:
+
+                case RunUpgradeType.HeroHealth:
+                case RunUpgradeType.HeroHealthStrong:
+
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+    }
+
+    public bool UsesDefinitionMaximumStacks =>
+        UsesDefinitionBonusPercent;
+
+    public float BonusPercent
+    {
+        get
+        {
+            if (!UsesDefinitionBonusPercent)
+            {
+                return 0f;
+            }
+
+            return Mathf.Max(
+                0.01f,
+                bonusPercent
+            );
+        }
+    }
+
+    public int MaximumStacks
+    {
+        get
+        {
+            if (!UsesDefinitionMaximumStacks)
+            {
+                return 1;
+            }
+
+            return Mathf.Clamp(
+                maximumStacks,
+                1,
+                3
+            );
+        }
+    }
+
+
+    public bool UsesAutomaticDescription =>
+        UsesDefinitionBonusPercent;
+
+
+    public string Description
+    {
+        get
+        {
+            if (UsesAutomaticDescription)
+            {
+                return BuildAutomaticDescription();
+            }
+
+            if (string.IsNullOrWhiteSpace(
+                    customDescription
+                ))
+            {
+                return "Upgrade description.";
+            }
+
+            return customDescription;
+        }
+    }
+
 
     public RunUpgradeCategory Category
     {
@@ -94,17 +168,21 @@ public sealed class RunUpgradeDefinition
                 case RunUpgradeType.TowerAttackSpeed:
                 case RunUpgradeType.TowerDamageStrong:
                 case RunUpgradeType.TowerAttackSpeedStrong:
+
                     return RunUpgradeCategory.DefenseTower;
 
                 default:
+
                     return RunUpgradeCategory.Hero;
             }
         }
     }
 
+
     public RunUpgradeDefinition()
     {
     }
+
 
     public RunUpgradeDefinition(
         RunUpgradeType upgradeType,
@@ -114,47 +192,158 @@ public sealed class RunUpgradeDefinition
         int maximumStacks
     )
     {
-        this.upgradeType = upgradeType;
-        this.displayName = displayName;
-        this.description = description;
-        this.bonusPercent = bonusPercent;
+        this.upgradeType =
+            upgradeType;
 
-        this.maximumStacks = Mathf.Clamp(
-            maximumStacks,
-            1,
-            3
-        );
+        this.displayName =
+            displayName;
+
+        customDescription =
+            description;
+
+        this.bonusPercent =
+            bonusPercent;
+
+        this.maximumStacks =
+            Mathf.Clamp(
+                maximumStacks,
+                1,
+                3
+            );
     }
+
 
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(displayName))
+        if (string.IsNullOrWhiteSpace(
+                displayName
+            ))
         {
-            displayName = upgradeType.ToString();
+            displayName =
+                upgradeType.ToString();
         }
 
-        if (string.IsNullOrWhiteSpace(description))
+        if (UsesDefinitionBonusPercent)
         {
-            description = "Upgrade description.";
+            bonusPercent =
+                Mathf.Max(
+                    0.01f,
+                    bonusPercent
+                );
+        }
+        else
+        {
+            bonusPercent = 0f;
         }
 
-        bonusPercent = Mathf.Max(
-            0.01f,
-            bonusPercent
-        );
+        if (UsesDefinitionMaximumStacks)
+        {
+            maximumStacks =
+                Mathf.Clamp(
+                    maximumStacks,
+                    1,
+                    3
+                );
+        }
+        else
+        {
+            maximumStacks = 1;
+        }
 
-        maximumStacks = Mathf.Clamp(
-            maximumStacks,
-            1,
-            3
-        );
+        if (UsesAutomaticDescription)
+        {
+            customDescription =
+                string.Empty;
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                customDescription
+            ))
+        {
+            customDescription =
+                "Upgrade description.";
+        }
+    }
+
+
+    private string BuildAutomaticDescription()
+    {
+        string formattedPercent =
+            BonusPercent.ToString(
+                "0.##"
+            );
+
+        switch (upgradeType)
+        {
+            case RunUpgradeType.HeroDamage:
+            case RunUpgradeType.HeroDamageStrong:
+
+                return
+                    "Increases hero damage by " +
+                    formattedPercent +
+                    "%.";
+
+
+            case RunUpgradeType.HeroAttackSpeed:
+            case RunUpgradeType.HeroAttackSpeedStrong:
+
+                return
+                    "Increases hero attack speed by " +
+                    formattedPercent +
+                    "%.";
+
+
+            case RunUpgradeType.TowerDamage:
+            case RunUpgradeType.TowerDamageStrong:
+
+                return
+                    "Increases defense tower damage by " +
+                    formattedPercent +
+                    "%.";
+
+
+            case RunUpgradeType.TowerAttackSpeed:
+            case RunUpgradeType.TowerAttackSpeedStrong:
+
+                return
+                    "Increases defense tower attack speed by " +
+                    formattedPercent +
+                    "%.";
+
+
+            case RunUpgradeType.HeroCrit:
+            case RunUpgradeType.HeroCritStrong:
+
+                return
+                    "Increases hero critical chance by " +
+                    formattedPercent +
+                    "%.";
+
+
+            case RunUpgradeType.HeroHealth:
+            case RunUpgradeType.HeroHealthStrong:
+
+                return
+                    "Increases hero maximum health by " +
+                    formattedPercent +
+                    "%.";
+
+
+            default:
+
+                return customDescription;
+        }
     }
 }
+
 
 [DisallowMultipleComponent]
 public class RunUpgradeManager : MonoBehaviour
 {
     [Header("System References")]
+
     [SerializeField]
     private CombatStats combatStats;
 
@@ -167,30 +356,34 @@ public class RunUpgradeManager : MonoBehaviour
     [SerializeField]
     private PlayerAttack playerAttack;
 
-    [Header("Selection Settings")]
-    [SerializeField, Min(1)]
-    private int unlockHeroLevel = 2;
 
-    [SerializeField, Range(2, 3)]
-    private int offeredOptionCount = 2;
+    [Header("Master Balance Source")]
 
-    [Header("Available Run Upgrades")]
     [SerializeField]
-    private List<RunUpgradeDefinition>
-        upgradeDefinitions = new();
+    private GameBalanceConfig balanceConfig;
+
 
     [Header("Debug Card Testing")]
-    [Tooltip("When enabled, only the selected upgrade types are allowed to appear for the chosen category.")]
+
+    [Tooltip(
+        "When enabled, only the selected upgrade types are " +
+        "allowed to appear for the chosen category."
+    )]
     [SerializeField]
     private bool useDebugTestPool;
 
     [SerializeField]
-    private RunUpgradeCategory debugTestCategory = RunUpgradeCategory.Hero;
+    private RunUpgradeCategory debugTestCategory =
+        RunUpgradeCategory.Hero;
 
     [SerializeField]
-    private List<RunUpgradeType> debugTestUpgradeTypes = new();
+    private List<RunUpgradeType>
+        debugTestUpgradeTypes =
+            new List<RunUpgradeType>();
+
 
     [Header("Debug - Do Not Edit")]
+
     [SerializeField]
     private bool selectionInProgress;
 
@@ -251,28 +444,75 @@ public class RunUpgradeManager : MonoBehaviour
     [SerializeField]
     private int debugAvailableUpgradeCount;
 
-    private readonly Dictionary<RunUpgradeType, int>
-        stackCounts = new();
 
-    private readonly List<RunUpgradeDefinition>
-        currentOptions = new();
+    private readonly Dictionary<
+        RunUpgradeType,
+        int
+    >
+        stackCounts =
+            new Dictionary<
+                RunUpgradeType,
+                int
+            >();
 
-    public bool IsSelectionUnlocked =>
-        playerProgression != null &&
-        playerProgression.HeroLevel >= unlockHeroLevel;
+
+    private readonly List<
+        RunUpgradeDefinition
+    >
+        currentOptions =
+            new List<
+                RunUpgradeDefinition
+            >();
+
+
+    public bool IsSelectionUnlocked
+    {
+        get
+        {
+            if (playerProgression == null ||
+                balanceConfig == null)
+            {
+                return false;
+            }
+
+            return
+                playerProgression.HeroLevel >=
+                balanceConfig.RunUpgradeUnlockHeroLevel;
+        }
+    }
+
 
     public bool IsSelectionInProgress =>
         selectionInProgress;
 
+
     public IReadOnlyList<RunUpgradeDefinition>
-        CurrentOptions => currentOptions;
+        CurrentOptions =>
+            currentOptions;
+
 
     private void Awake()
     {
         ResolveReferences();
-        EnsureDefaultDefinitions();
         RefreshDebugInfo();
     }
+
+
+    private void Reset()
+    {
+        ResolveReferences();
+    }
+
+
+    private void OnValidate()
+    {
+        if (debugTestUpgradeTypes == null)
+        {
+            debugTestUpgradeTypes =
+                new List<RunUpgradeType>();
+        }
+    }
+
 
     public int GetStackCount(
         RunUpgradeType upgradeType
@@ -289,6 +529,7 @@ public class RunUpgradeManager : MonoBehaviour
         return 0;
     }
 
+
     public bool TryBeginInitialHeroSelection()
     {
         if (!IsSelectionUnlocked)
@@ -301,12 +542,16 @@ public class RunUpgradeManager : MonoBehaviour
         );
     }
 
+
     public bool TryBeginSelection(
         RunUpgradeCategory category
     )
     {
-        return TryBeginSelectionInternal(category);
+        return TryBeginSelectionInternal(
+            category
+        );
     }
+
 
     private bool TryBeginSelectionInternal(
         RunUpgradeCategory category
@@ -339,7 +584,9 @@ public class RunUpgradeManager : MonoBehaviour
             return false;
         }
 
-        BuildCurrentOptions(category);
+        BuildCurrentOptions(
+            category
+        );
 
         if (currentOptions.Count == 0)
         {
@@ -353,8 +600,11 @@ public class RunUpgradeManager : MonoBehaviour
             return false;
         }
 
-        selectionInProgress = true;
-        debugCurrentCategory = category;
+        selectionInProgress =
+            true;
+
+        debugCurrentCategory =
+            category;
 
         RefreshDebugInfo();
 
@@ -368,12 +618,14 @@ public class RunUpgradeManager : MonoBehaviour
         return true;
     }
 
+
     public bool TrySelectOption(
         int optionIndex,
         out RunUpgradeDefinition selectedUpgrade
     )
     {
-        selectedUpgrade = null;
+        selectedUpgrade =
+            null;
 
         if (!selectionInProgress)
         {
@@ -396,10 +648,28 @@ public class RunUpgradeManager : MonoBehaviour
             currentOptions[optionIndex];
 
         int currentStackCount =
-            GetStackCount(definition.UpgradeType);
+            GetStackCount(
+                definition.UpgradeType
+            );
+
+        int maximumStacks =
+            GetMaximumStacks(
+                definition
+            );
+
+        if (maximumStacks <= 0)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: Maximum stack count " +
+                $"for {definition.UpgradeType} could not be resolved.",
+                this
+            );
+
+            return false;
+        }
 
         if (currentStackCount >=
-            definition.MaximumStacks)
+            maximumStacks)
         {
             Debug.LogError(
                 "RunUpgradeManager: The selected upgrade " +
@@ -410,7 +680,9 @@ public class RunUpgradeManager : MonoBehaviour
             return false;
         }
 
-        if (!TryApplyUpgrade(definition))
+        if (!TryApplyUpgrade(
+                definition
+            ))
         {
             return false;
         }
@@ -418,12 +690,16 @@ public class RunUpgradeManager : MonoBehaviour
         int newStackCount =
             currentStackCount + 1;
 
-        stackCounts[definition.UpgradeType] =
+        stackCounts[
+            definition.UpgradeType
+        ] =
             newStackCount;
 
-        selectedUpgrade = definition;
+        selectedUpgrade =
+            definition;
 
-        selectionInProgress = false;
+        selectionInProgress =
+            false;
 
         currentOptions.Clear();
 
@@ -433,21 +709,41 @@ public class RunUpgradeManager : MonoBehaviour
             "RunUpgradeManager: Selected " +
             $"'{definition.DisplayName}'. Stack " +
             $"{newStackCount}/" +
-            $"{definition.MaximumStacks}.",
+            $"{maximumStacks}.",
             this
         );
 
         return true;
     }
 
+
     public void CancelSelection()
     {
-        selectionInProgress = false;
+        selectionInProgress =
+            false;
 
         currentOptions.Clear();
 
         RefreshDebugInfo();
     }
+
+
+    private int GetMaximumStacks(
+        RunUpgradeDefinition definition
+    )
+    {
+        if (definition == null ||
+            balanceConfig == null)
+        {
+            return 0;
+        }
+
+        return balanceConfig
+            .GetRunUpgradeMaximumStacks(
+                definition
+            );
+    }
+
 
     private bool TryApplyUpgrade(
         RunUpgradeDefinition definition
@@ -457,54 +753,106 @@ public class RunUpgradeManager : MonoBehaviour
         {
             case RunUpgradeType.HeroDamage:
             case RunUpgradeType.HeroDamageStrong:
+
                 return combatStats
                     .TryAddHeroRunDamageBonusPercent(
                         definition.BonusPercent
                     );
 
+
             case RunUpgradeType.HeroAttackSpeed:
             case RunUpgradeType.HeroAttackSpeedStrong:
+
                 return combatStats
                     .TryAddHeroRunAttackSpeedBonusPercent(
                         definition.BonusPercent
                     );
 
+
             case RunUpgradeType.HeroCrit:
             case RunUpgradeType.HeroCritStrong:
+
                 return combatStats
                     .TryAddHeroRunCritChanceBonusPercent(
                         definition.BonusPercent
                     );
 
+
             case RunUpgradeType.HeroHealth:
             case RunUpgradeType.HeroHealthStrong:
+
                 return TryApplyHeroHealthUpgrade(
                     definition
                 );
 
+
             case RunUpgradeType.HeroDoubleShot:
+
                 ResolveReferences();
 
-                if (playerAttack == null)
+                if (playerAttack == null ||
+                    balanceConfig?.HeroDoubleShot == null)
                 {
                     Debug.LogError(
-                        "RunUpgradeManager: PlayerAttack was not found.",
+                        "RunUpgradeManager: Double Shot balance " +
+                        "or PlayerAttack was not found.",
                         this
                     );
 
                     return false;
                 }
 
+                DoubleShotBalanceValues
+                    doubleShotBalance =
+                        balanceConfig.HeroDoubleShot;
+
                 return playerAttack
-                    .TryEnableDoubleShot();
+                    .TryEnableDoubleShot(
+                        doubleShotBalance
+                            .ProjectileDamageMultiplier,
+                        doubleShotBalance
+                            .AttackIntervalMultiplier,
+                        doubleShotBalance
+                            .WindupPenalty,
+                        doubleShotBalance
+                            .ProjectileOffset
+                    );
+
 
             case RunUpgradeType.HeroRicochet:
+
                 ResolveReferences();
 
-                if (playerAttack == null)
+                if (playerAttack == null ||
+                    balanceConfig?.HeroRicochet == null)
                 {
                     Debug.LogError(
-                        "RunUpgradeManager: PlayerAttack was not found.",
+                        "RunUpgradeManager: Ricochet balance " +
+                        "or PlayerAttack was not found.",
+                        this
+                    );
+
+                    return false;
+                }
+
+                int nextRicochetStack =
+                    GetStackCount(
+                        RunUpgradeType.HeroRicochet
+                    ) + 1;
+
+                RicochetTierBalanceValues
+                    ricochetTier =
+                        balanceConfig
+                            .HeroRicochet
+                            .GetTier(
+                                nextRicochetStack
+                            );
+
+                if (ricochetTier == null)
+                {
+                    Debug.LogError(
+                        "RunUpgradeManager: Ricochet tier " +
+                        $"{nextRicochetStack} was not found.",
                         this
                     );
 
@@ -512,31 +860,86 @@ public class RunUpgradeManager : MonoBehaviour
                 }
 
                 return playerAttack
-                    .TryUpgradeRicochet();
+                    .TryUpgradeRicochet(
+                        nextRicochetStack,
+                        GetMaximumStacks(definition),
+                        ricochetTier.ExtraTargets,
+                        ricochetTier.DamageMultiplier,
+                        balanceConfig
+                            .HeroRicochet
+                            .SearchRadius
+                    );
+
 
             case RunUpgradeType.HeroPoison:
+
                 ResolveReferences();
 
-                if (playerAttack == null)
+                if (playerAttack == null ||
+                    balanceConfig?.HeroPoison == null)
                 {
                     Debug.LogError(
-                        "RunUpgradeManager: PlayerAttack was not found.",
+                        "RunUpgradeManager: Poison balance " +
+                        "or PlayerAttack was not found.",
                         this
                     );
 
                     return false;
                 }
 
+                PoisonBalanceValues
+                    poisonBalance =
+                        balanceConfig.HeroPoison;
+
                 return playerAttack
-                    .TryEnablePoison();
+                    .TryEnablePoison(
+                        poisonBalance
+                            .PrimaryApplyChance,
+                        poisonBalance
+                            .RicochetApplyChance,
+                        poisonBalance
+                            .DamageMultiplier,
+                        poisonBalance
+                            .Duration,
+                        poisonBalance
+                            .TickInterval
+                    );
+
 
             case RunUpgradeType.HeroStun:
+
                 ResolveReferences();
 
-                if (playerAttack == null)
+                if (playerAttack == null ||
+                    balanceConfig?.HeroStun == null)
                 {
                     Debug.LogError(
-                        "RunUpgradeManager: PlayerAttack was not found.",
+                        "RunUpgradeManager: Stun balance " +
+                        "or PlayerAttack was not found.",
+                        this
+                    );
+
+                    return false;
+                }
+
+                int nextStunStack =
+                    GetStackCount(
+                        RunUpgradeType.HeroStun
+                    ) + 1;
+
+                StunTierBalanceValues
+                    stunTier =
+                        balanceConfig
+                            .HeroStun
+                            .GetTier(
+                                nextStunStack
+                            );
+
+                if (stunTier == null)
+                {
+                    Debug.LogError(
+                        "RunUpgradeManager: Stun tier " +
+                        $"{nextStunStack} was not found.",
                         this
                     );
 
@@ -544,15 +947,53 @@ public class RunUpgradeManager : MonoBehaviour
                 }
 
                 return playerAttack
-                    .TryUpgradeStun();
+                    .TryUpgradeStun(
+                        nextStunStack,
+                        GetMaximumStacks(definition),
+                        balanceConfig
+                            .HeroStun
+                            .PrimaryApplyChance,
+                        balanceConfig
+                            .HeroStun
+                            .RicochetApplyChance,
+                        stunTier.Duration
+                    );
+
 
             case RunUpgradeType.HeroSlow:
+
                 ResolveReferences();
 
-                if (playerAttack == null)
+                if (playerAttack == null ||
+                    balanceConfig?.HeroSlow == null)
                 {
                     Debug.LogError(
-                        "RunUpgradeManager: PlayerAttack was not found.",
+                        "RunUpgradeManager: Slow balance " +
+                        "or PlayerAttack was not found.",
+                        this
+                    );
+
+                    return false;
+                }
+
+                int nextSlowStack =
+                    GetStackCount(
+                        RunUpgradeType.HeroSlow
+                    ) + 1;
+
+                SlowTierBalanceValues
+                    slowTier =
+                        balanceConfig
+                            .HeroSlow
+                            .GetTier(
+                                nextSlowStack
+                            );
+
+                if (slowTier == null)
+                {
+                    Debug.LogError(
+                        "RunUpgradeManager: Slow tier " +
+                        $"{nextSlowStack} was not found.",
                         this
                     );
 
@@ -560,23 +1001,37 @@ public class RunUpgradeManager : MonoBehaviour
                 }
 
                 return playerAttack
-                    .TryUpgradeSlow();
+                    .TryUpgradeSlow(
+                        nextSlowStack,
+                        GetMaximumStacks(definition),
+                        slowTier
+                            .MovementReductionPercent,
+                        balanceConfig
+                            .HeroSlow
+                            .Duration
+                    );
+
 
             case RunUpgradeType.TowerDamage:
             case RunUpgradeType.TowerDamageStrong:
+
                 return combatStats
                     .TryAddTowerRunDamageBonusPercent(
                         definition.BonusPercent
                     );
 
+
             case RunUpgradeType.TowerAttackSpeed:
             case RunUpgradeType.TowerAttackSpeedStrong:
+
                 return combatStats
                     .TryAddTowerRunAttackSpeedBonusPercent(
                         definition.BonusPercent
                     );
 
+
             default:
+
                 Debug.LogError(
                     "RunUpgradeManager: Unsupported upgrade " +
                     $"type {definition.UpgradeType}.",
@@ -586,6 +1041,7 @@ public class RunUpgradeManager : MonoBehaviour
                 return false;
         }
     }
+
 
     private bool TryApplyHeroHealthUpgrade(
         RunUpgradeDefinition definition
@@ -603,9 +1059,6 @@ public class RunUpgradeManager : MonoBehaviour
             return false;
         }
 
-        // The health percentage is calculated from the hero's
-        // permanent maximum HP before run-health cards.
-        // This prevents HP cards from multiplying one another.
         int permanentMaxHealth =
             combatStats.HeroMaxHealth -
             combatStats.HeroRunMaxHealthBonus;
@@ -631,16 +1084,43 @@ public class RunUpgradeManager : MonoBehaviour
                 )
             );
 
-        return playerHealth.TryAddRunMaxHealth(
-            healthToAdd
-        );
+        return playerHealth
+            .TryAddRunMaxHealth(
+                healthToAdd
+            );
     }
+
 
     private void BuildCurrentOptions(
         RunUpgradeCategory category
     )
     {
         currentOptions.Clear();
+
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: GameBalanceConfig is not assigned.",
+                this
+            );
+
+            return;
+        }
+
+        IReadOnlyList<RunUpgradeDefinition>
+            upgradeDefinitions =
+                balanceConfig.RunUpgradeDefinitions;
+
+        if (upgradeDefinitions == null)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: Run upgrade definitions " +
+                "were not found in GameBalanceConfig.",
+                this
+            );
+
+            return;
+        }
 
         if (useDebugTestPool &&
             category == debugTestCategory &&
@@ -654,13 +1134,18 @@ public class RunUpgradeManager : MonoBehaviour
         }
 
         List<RunUpgradeDefinition>
-            availableOptions = new();
+            availableOptions =
+                new List<RunUpgradeDefinition>();
 
         HashSet<RunUpgradeType>
-            addedTypes = new();
+            addedTypes =
+                new HashSet<RunUpgradeType>();
 
-        foreach (RunUpgradeDefinition definition
-                 in upgradeDefinitions)
+
+        foreach (
+            RunUpgradeDefinition definition
+            in upgradeDefinitions
+        )
         {
             if (definition == null ||
                 definition.Category != category ||
@@ -685,19 +1170,30 @@ public class RunUpgradeManager : MonoBehaviour
                     definition.UpgradeType
                 );
 
-            if (stackCount >=
-                definition.MaximumStacks)
+            int maximumStacks =
+                GetMaximumStacks(
+                    definition
+                );
+
+            if (maximumStacks <= 0 ||
+                stackCount >=
+                maximumStacks)
             {
                 continue;
             }
 
-            availableOptions.Add(definition);
+            availableOptions.Add(
+                definition
+            );
         }
 
-        for (int i =
-                 availableOptions.Count - 1;
-             i > 0;
-             i--)
+
+        for (
+            int i =
+                availableOptions.Count - 1;
+            i > 0;
+            i--
+        )
         {
             int randomIndex =
                 UnityEngine.Random.Range(
@@ -715,24 +1211,30 @@ public class RunUpgradeManager : MonoBehaviour
             );
         }
 
+
         int optionsToOffer =
             Mathf.Min(
-                offeredOptionCount,
+                balanceConfig.RunUpgradeOfferedOptionCount,
                 availableOptions.Count
             );
 
-        for (int i = 0;
-             i < optionsToOffer;
-             i++)
+
+        for (
+            int i = 0;
+            i < optionsToOffer;
+            i++
+        )
         {
             currentOptions.Add(
                 availableOptions[i]
             );
         }
 
+
         debugAvailableUpgradeCount =
             availableOptions.Count;
     }
+
 
     private void ResolveReferences()
     {
@@ -765,11 +1267,13 @@ public class RunUpgradeManager : MonoBehaviour
         }
     }
 
+
     private bool ValidateReferences()
     {
         ResolveReferences();
 
-        bool referencesAreValid = true;
+        bool referencesAreValid =
+            true;
 
         if (combatStats == null)
         {
@@ -778,229 +1282,35 @@ public class RunUpgradeManager : MonoBehaviour
                 this
             );
 
-            referencesAreValid = false;
+            referencesAreValid =
+                false;
         }
 
         if (playerProgression == null)
         {
             Debug.LogError(
-                "RunUpgradeManager: Assign " +
-                "PlayerProgression.",
+                "RunUpgradeManager: Assign PlayerProgression.",
                 this
             );
 
-            referencesAreValid = false;
+            referencesAreValid =
+                false;
+        }
+
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: Assign GameBalanceConfig.",
+                this
+            );
+
+            referencesAreValid =
+                false;
         }
 
         return referencesAreValid;
     }
 
-    private void EnsureDefaultDefinitions()
-    {
-        if (upgradeDefinitions == null)
-        {
-            upgradeDefinitions =
-                new List<RunUpgradeDefinition>();
-        }
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroDamage,
-                "DAMAGE",
-                "+10% hero damage",
-                10f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroAttackSpeed,
-                "ATTACK SPEED",
-                "+10% hero attack speed",
-                10f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.TowerDamage,
-                "TOWER DAMAGE",
-                "Increases defense tower damage by 10%.",
-                10f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.TowerAttackSpeed,
-                "TOWER ATTACK SPEED",
-                "Increases defense tower attack speed by 10%.",
-                10f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroDamageStrong,
-                "POWERFUL DAMAGE",
-                "+20% hero damage",
-                20f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroAttackSpeedStrong,
-                "RAPID ATTACK",
-                "+20% hero attack speed",
-                20f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.TowerDamageStrong,
-                "POWERFUL TOWER",
-                "Increases defense tower damage by 20%.",
-                20f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.TowerAttackSpeedStrong,
-                "RAPID TOWER",
-                "Increases defense tower attack speed by 20%.",
-                20f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroCrit,
-                "CRITICAL CHANCE",
-                "Increases hero critical chance.",
-                20f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroCritStrong,
-                "DEADLY PRECISION",
-                "Greatly increases hero critical chance.",
-                40f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroHealth,
-                "VITALITY",
-                "Increases hero maximum health.",
-                7f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroHealthStrong,
-                "GREATER VITALITY",
-                "Greatly increases hero maximum health.",
-                15f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroDoubleShot,
-                "DOUBLE SHOT",
-                "Fires two projectiles at the same target. " +
-                "Each projectile deals reduced damage and " +
-                "the attack takes longer to prepare.",
-                85f,
-                1
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroRicochet,
-                "RICOCHET",
-                "Projectiles bounce to additional enemies. " +
-                "Further stacks improve the number of targets " +
-                "and ricochet damage.",
-                33f,
-                3
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroPoison,
-                "POISON",
-                "Projectile hits can poison enemies and deal " +
-                "damage over time. Ricochet hits have a lower " +
-                "chance to apply poison.",
-                50f,
-                1
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroStun,
-                "STUN",
-                "Projectile hits can briefly stop enemies. " +
-                "A second stack increases the stun duration.",
-                10f,
-                2
-            )
-        );
-
-        EnsureDefinition(
-            new RunUpgradeDefinition(
-                RunUpgradeType.HeroSlow,
-                "SLOW",
-                "Projectile hits slow enemy movement. " +
-                "A second stack increases the movement reduction.",
-                15f,
-                2
-            )
-        );
-    }
-
-    private void EnsureDefinition(
-        RunUpgradeDefinition definitionToAdd
-    )
-    {
-        foreach (RunUpgradeDefinition definition
-                 in upgradeDefinitions)
-        {
-            if (definition != null &&
-                definition.UpgradeType ==
-                definitionToAdd.UpgradeType)
-            {
-                return;
-            }
-        }
-
-        upgradeDefinitions.Add(
-            definitionToAdd
-        );
-    }
 
     private void RefreshDebugInfo()
     {
@@ -1091,43 +1401,8 @@ public class RunUpgradeManager : MonoBehaviour
 
         if (!selectionInProgress)
         {
-            debugAvailableUpgradeCount = 0;
-        }
-    }
-
-    private void Reset()
-    {
-        ResolveReferences();
-        EnsureDefaultDefinitions();
-    }
-
-    private void OnValidate()
-    {
-        unlockHeroLevel =
-            Mathf.Max(
-                1,
-                unlockHeroLevel
-            );
-
-        offeredOptionCount =
-            Mathf.Clamp(
-                offeredOptionCount,
-                2,
-                3
-            );
-
-        EnsureDefaultDefinitions();
-
-        if (debugTestUpgradeTypes == null)
-        {
-            debugTestUpgradeTypes =
-                new List<RunUpgradeType>();
-        }
-
-        foreach (RunUpgradeDefinition definition
-                 in upgradeDefinitions)
-        {
-            definition?.Validate();
+            debugAvailableUpgradeCount =
+                0;
         }
     }
 }

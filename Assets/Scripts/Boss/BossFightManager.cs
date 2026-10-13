@@ -29,20 +29,9 @@ public class BossFightManager : MonoBehaviour
     [Header("Fight Start Settings")]
     [SerializeField] private bool startFightOnStart = true;
 
-    [Header("Continue Settings")]
+    [Header("Master Balance Source")]
     [SerializeField]
-    [Range(1, 100)]
-    private int continueHealthPercent = 100;
-
-    [Header("Post Continue Delay Settings")]
-    [SerializeField]
-    private float playerAttackDelay = 3f;
-
-    [SerializeField]
-    private float bossMovementDelay = 2f;
-
-    [SerializeField]
-    private float bossAttackDelay = 3f;
+    private GameBalanceConfig balanceConfig;
 
     [Header("Debug - Do Not Edit")]
     [SerializeField]
@@ -171,9 +160,22 @@ public class BossFightManager : MonoBehaviour
             return;
         }
 
+        if (balanceConfig == null)
+        {
+            Debug.LogWarning(
+                "BossFightManager: GameBalanceConfig " +
+                "is not assigned."
+            );
+
+            return;
+        }
+
+        BossContinueBalanceValues continueBalance =
+            balanceConfig.FirstBossContinue;
+
         bool reviveSucceeded =
             playerHealth.TryRevive(
-                continueHealthPercent
+                continueBalance.ContinueHealthPercent
             );
 
         if (!reviveSucceeded)
@@ -189,7 +191,7 @@ public class BossFightManager : MonoBehaviour
         if (playerAttack != null)
         {
             playerAttack.StartAttackDelay(
-                playerAttackDelay
+                continueBalance.PlayerAttackDelay
             );
         }
         else
@@ -204,8 +206,8 @@ public class BossFightManager : MonoBehaviour
         {
             bossAttackController
                 .StartPostContinueDelays(
-                    bossMovementDelay,
-                    bossAttackDelay
+                    continueBalance.BossMovementDelay,
+                    continueBalance.BossAttackDelay
                 );
         }
         else
@@ -234,7 +236,10 @@ public class BossFightManager : MonoBehaviour
 
         Debug.Log(
             "BossFightManager: Continue used. " +
-            "Temporary combat delays started."
+            $"Health = {continueBalance.ContinueHealthPercent}%. " +
+            $"Player attack delay = {continueBalance.PlayerAttackDelay:F1} s. " +
+            $"Boss movement delay = {continueBalance.BossMovementDelay:F1} s. " +
+            $"Boss attack delay = {continueBalance.BossAttackDelay:F1} s."
         );
     }
 
@@ -592,6 +597,14 @@ public class BossFightManager : MonoBehaviour
             Debug.LogWarning(
                 "BossFightManager: GameManager " +
                 "was not found."
+            );
+        }
+
+        if (balanceConfig == null)
+        {
+            Debug.LogWarning(
+                "BossFightManager: GameBalanceConfig " +
+                "is not assigned."
             );
         }
     }

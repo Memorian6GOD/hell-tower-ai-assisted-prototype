@@ -5,56 +5,104 @@ using UnityEngine.AI;
 public class EnemyMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
-    [SerializeField] private float moveSpeed = 2f;
-    [SerializeField] private float rotationSpeed = 360f;
+    [SerializeField]
+    private float moveSpeed = 2f;
+
+    [SerializeField]
+    private float rotationSpeed = 360f;
+
 
     [Header("Player Attack Position Settings")]
-    [SerializeField] private float stopGap = 0.15f;
-    [SerializeField] private float arrivalTolerance = 0.25f;
-    [SerializeField] private float resumeExtraDistance = 0.45f;
+    [SerializeField]
+    private float stopGap = 0.15f;
 
-    [Header("Player Aggro Settings")]
-    [SerializeField, Min(0f)]
-    private float aggroConfirmationTime = 0.3f;
+    [SerializeField]
+    private float arrivalTolerance = 0.25f;
+
+    [SerializeField]
+    private float resumeExtraDistance = 0.45f;
+
 
     [Header("Core Tower Slot Settings")]
-    [SerializeField] private float slotArrivalDistance = 0.2f;
+    [SerializeField]
+    private float slotArrivalDistance = 0.2f;
+
 
     [Header("Navigation Settings")]
-    [SerializeField] private float repathInterval = 0.1f;
-    [SerializeField] private float navMeshSampleDistance = 2f;
+    [SerializeField]
+    private float repathInterval = 0.1f;
+
+    [SerializeField]
+    private float navMeshSampleDistance = 2f;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private bool debugIsOnNavMesh;
-    [SerializeField] private bool debugIsTargetingPlayer;
-    [SerializeField] private bool debugIsAtTarget;
-    [SerializeField] private bool debugAgentIsStopped;
+    [SerializeField]
+    private bool debugIsOnNavMesh;
 
-    [SerializeField] private bool debugHasPlayerDestination;
-    [SerializeField] private bool debugHasPath;
-    [SerializeField] private bool debugPathPending;
+    [SerializeField]
+    private bool debugIsTargetingPlayer;
 
-    [SerializeField] private float debugDistanceToPlayer;
-    [SerializeField] private float debugAggroRadius;
-    [SerializeField] private float debugDisengageRadius;
+    [SerializeField]
+    private bool debugIsAtTarget;
 
-    [SerializeField] private bool debugIsConfirmingAggro;
-    [SerializeField] private float debugAggroConfirmationTimer;
+    [SerializeField]
+    private bool debugAgentIsStopped;
 
-    [SerializeField] private float debugRemainingDistance;
-    [SerializeField] private float debugStoppingDistance;
-    [SerializeField] private float debugVelocity;
+    [SerializeField]
+    private bool debugHasPlayerDestination;
 
-    [SerializeField] private Vector3 debugAgentDestination;
+    [SerializeField]
+    private bool debugHasPath;
 
-    [SerializeField] private NavMeshPathStatus debugPathStatus;
+    [SerializeField]
+    private bool debugPathPending;
 
-    [SerializeField] private bool debugLastPlayerSampleSuccess;
-    [SerializeField] private bool debugLastPlayerDestinationAccepted;
+    [SerializeField]
+    private float debugDistanceToPlayer;
 
-    [SerializeField] private string debugCurrentTarget = "CoreTower";
-    [SerializeField] private int debugTargetSwitchCount;
-    [SerializeField] private string debugLastTargetSwitch = "None";
+    [SerializeField]
+    private float debugAggroRadius;
+
+    [SerializeField]
+    private float debugDisengageRadius;
+
+    [SerializeField]
+    private bool debugIsConfirmingAggro;
+
+    [SerializeField]
+    private float debugAggroConfirmationTimer;
+
+    [SerializeField]
+    private float debugRemainingDistance;
+
+    [SerializeField]
+    private float debugStoppingDistance;
+
+    [SerializeField]
+    private float debugVelocity;
+
+    [SerializeField]
+    private Vector3 debugAgentDestination;
+
+    [SerializeField]
+    private NavMeshPathStatus debugPathStatus;
+
+    [SerializeField]
+    private bool debugLastPlayerSampleSuccess;
+
+    [SerializeField]
+    private bool debugLastPlayerDestinationAccepted;
+
+    [SerializeField]
+    private string debugCurrentTarget = "CoreTower";
+
+    [SerializeField]
+    private int debugTargetSwitchCount;
+
+    [SerializeField]
+    private string debugLastTargetSwitch = "None";
+
 
     private CoreTowerHealth coreTower;
     private Collider coreTowerCollider;
@@ -75,15 +123,63 @@ public class EnemyMovement : MonoBehaviour
     private bool hasCoreTowerDestination;
     private bool hasPlayerDestination;
 
-    public bool IsAtTarget { get; private set; }
-    public bool IsTargetingPlayer { get; private set; }
+    private bool hasStarted;
+
+
+    public bool IsAtTarget
+    {
+        get;
+        private set;
+    }
+
+    public bool IsTargetingPlayer
+    {
+        get;
+        private set;
+    }
+
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureMoveSpeed(
+        float newMoveSpeed
+    )
+    {
+        if (hasStarted ||
+            newMoveSpeed <= 0f)
+        {
+            return false;
+        }
+
+        moveSpeed =
+            Mathf.Max(
+                0.01f,
+                newMoveSpeed
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Start()
     {
-        agent = GetComponent<NavMeshAgent>();
-        enemyCollider = GetComponent<Collider>();
+        hasStarted =
+            true;
 
-        coreTower = FindAnyObjectByType<CoreTowerHealth>();
+        agent =
+            GetComponent<NavMeshAgent>();
+
+        enemyCollider =
+            GetComponent<Collider>();
+
+        coreTower =
+            FindAnyObjectByType<CoreTowerHealth>();
 
         if (coreTower != null)
         {
@@ -106,18 +202,32 @@ public class EnemyMovement : MonoBehaviour
                 playerHealth.GetComponent<Collider>();
         }
 
-        agent.speed = moveSpeed;
-        agent.angularSpeed = rotationSpeed;
-        agent.acceleration = 20f;
-        agent.autoBraking = true;
-        agent.autoRepath = true;
-        agent.updateRotation = true;
+        agent.speed =
+            moveSpeed;
+
+        agent.angularSpeed =
+            rotationSpeed;
+
+        agent.acceleration =
+            20f;
+
+        agent.autoBraking =
+            true;
+
+        agent.autoRepath =
+            true;
+
+        agent.updateRotation =
+            true;
 
         agent.obstacleAvoidanceType =
             ObstacleAvoidanceType.NoObstacleAvoidance;
 
         agent.avoidancePriority =
-            Random.Range(20, 81);
+            Random.Range(
+                20,
+                81
+            );
 
         if (enemyCollider != null)
         {
@@ -126,7 +236,8 @@ public class EnemyMovement : MonoBehaviour
 
             if (enemyRadius > 0f)
             {
-                agent.radius = enemyRadius;
+                agent.radius =
+                    enemyRadius;
             }
         }
 
@@ -181,17 +292,22 @@ public class EnemyMovement : MonoBehaviour
                 playerAggro.DisengageRadius;
         }
 
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
 
-        debugCurrentTarget = "CoreTower";
+        debugCurrentTarget =
+            "CoreTower";
     }
+
 
     private void Update()
     {
         if (agent == null ||
             !agent.isOnNavMesh)
         {
-            IsAtTarget = false;
+            IsAtTarget =
+                false;
+
             return;
         }
 
@@ -209,17 +325,26 @@ public class EnemyMovement : MonoBehaviour
 
                 ReleaseCoreTowerSlot();
 
-                IsAtTarget = false;
-                hasPlayerDestination = false;
+                IsAtTarget =
+                    false;
 
-                agent.isStopped = false;
+                hasPlayerDestination =
+                    false;
+
+                agent.isStopped =
+                    false;
+
                 agent.ResetPath();
 
-                repathTimer = 0f;
-                aggroConfirmationTimer = 0f;
+                repathTimer =
+                    0f;
+
+                aggroConfirmationTimer =
+                    0f;
             }
 
-            IsTargetingPlayer = true;
+            IsTargetingPlayer =
+                true;
 
             UpdatePlayerTarget();
 
@@ -233,25 +358,43 @@ public class EnemyMovement : MonoBehaviour
                 "CoreTower"
             );
 
-            IsTargetingPlayer = false;
-            IsAtTarget = false;
-            hasPlayerDestination = false;
+            IsTargetingPlayer =
+                false;
 
-            agent.isStopped = false;
+            IsAtTarget =
+                false;
+
+            hasPlayerDestination =
+                false;
+
+            agent.isStopped =
+                false;
+
             agent.ResetPath();
 
-            repathTimer = 0f;
-            aggroConfirmationTimer = 0f;
-            hasCoreTowerDestination = false;
+            repathTimer =
+                0f;
+
+            aggroConfirmationTimer =
+                0f;
+
+            hasCoreTowerDestination =
+                false;
         }
 
         UpdateCoreTowerTarget();
     }
 
+
     private void LateUpdate()
     {
         UpdateDebugInfo();
     }
+
+
+    // =========================================================
+    // PLAYER AGGRO
+    // =========================================================
 
     private bool ShouldTargetPlayer()
     {
@@ -275,7 +418,8 @@ public class EnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        directionToPlayer.y = 0f;
+        directionToPlayer.y =
+            0f;
 
         float distanceToPlayer =
             directionToPlayer.magnitude;
@@ -296,9 +440,13 @@ public class EnemyMovement : MonoBehaviour
             return false;
         }
 
-        if (aggroConfirmationTime <= 0f)
+        float confirmationTime =
+            playerAggro.AggroConfirmationTime;
+
+        if (confirmationTime <= 0f)
         {
-            aggroConfirmationTimer = 0f;
+            aggroConfirmationTimer =
+                0f;
 
             return true;
         }
@@ -307,10 +455,10 @@ public class EnemyMovement : MonoBehaviour
             Time.deltaTime;
 
         if (aggroConfirmationTimer >=
-            aggroConfirmationTime)
+            confirmationTime)
         {
             aggroConfirmationTimer =
-                aggroConfirmationTime;
+                confirmationTime;
 
             return true;
         }
@@ -318,10 +466,17 @@ public class EnemyMovement : MonoBehaviour
         return false;
     }
 
+
     private void ResetAggroConfirmation()
     {
-        aggroConfirmationTimer = 0f;
+        aggroConfirmationTimer =
+            0f;
     }
+
+
+    // =========================================================
+    // PLAYER TARGET
+    // =========================================================
 
     private void UpdatePlayerTarget()
     {
@@ -331,20 +486,26 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        repathTimer -= Time.deltaTime;
+        repathTimer -=
+            Time.deltaTime;
 
         if (repathTimer <= 0f)
         {
             hasPlayerDestination =
                 SetDestinationToPlayer();
 
-            repathTimer = repathInterval;
+            repathTimer =
+                repathInterval;
         }
 
         if (!hasPlayerDestination)
         {
-            IsAtTarget = false;
-            agent.isStopped = false;
+            IsAtTarget =
+                false;
+
+            agent.isStopped =
+                false;
+
             return;
         }
 
@@ -353,10 +514,16 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        if (float.IsInfinity(agent.remainingDistance))
+        if (float.IsInfinity(
+                agent.remainingDistance
+            ))
         {
-            IsAtTarget = false;
-            agent.isStopped = false;
+            IsAtTarget =
+                false;
+
+            agent.isStopped =
+                false;
+
             return;
         }
 
@@ -373,12 +540,16 @@ public class EnemyMovement : MonoBehaviour
             if (agent.remainingDistance >
                 resumeDistance)
             {
-                IsAtTarget = false;
-                agent.isStopped = false;
+                IsAtTarget =
+                    false;
+
+                agent.isStopped =
+                    false;
             }
             else
             {
-                agent.isStopped = true;
+                agent.isStopped =
+                    true;
 
                 RotateTowardsPlayer();
 
@@ -389,24 +560,34 @@ public class EnemyMovement : MonoBehaviour
         if (agent.remainingDistance <=
             attackDistance)
         {
-            IsAtTarget = true;
-            agent.isStopped = true;
+            IsAtTarget =
+                true;
+
+            agent.isStopped =
+                true;
 
             RotateTowardsPlayer();
 
             return;
         }
 
-        IsAtTarget = false;
-        agent.isStopped = false;
+        IsAtTarget =
+            false;
+
+        agent.isStopped =
+            false;
     }
+
 
     private bool SetDestinationToPlayer()
     {
         if (playerCollider == null)
         {
-            debugLastPlayerSampleSuccess = false;
-            debugLastPlayerDestinationAccepted = false;
+            debugLastPlayerSampleSuccess =
+                false;
+
+            debugLastPlayerDestinationAccepted =
+                false;
 
             return false;
         }
@@ -430,7 +611,8 @@ public class EnemyMovement : MonoBehaviour
 
         if (!sampleSuccess)
         {
-            debugLastPlayerDestinationAccepted = false;
+            debugLastPlayerDestinationAccepted =
+                false;
 
             return false;
         }
@@ -451,6 +633,11 @@ public class EnemyMovement : MonoBehaviour
         return destinationAccepted;
     }
 
+
+    // =========================================================
+    // CORE TOWER TARGET
+    // =========================================================
+
     private void UpdateCoreTowerTarget()
     {
         if (coreTower == null ||
@@ -463,10 +650,16 @@ public class EnemyMovement : MonoBehaviour
         if (currentCoreTowerSlot == null)
         {
             currentCoreTowerSlot =
-                coreTowerAttackSlots.ClaimClosestSlot(this);
+                coreTowerAttackSlots
+                    .ClaimClosestSlot(
+                        this
+                    );
 
-            IsAtTarget = false;
-            hasCoreTowerDestination = false;
+            IsAtTarget =
+                false;
+
+            hasCoreTowerDestination =
+                false;
 
             if (currentCoreTowerSlot != null)
             {
@@ -484,24 +677,35 @@ public class EnemyMovement : MonoBehaviour
 
         if (!hasCoreTowerDestination)
         {
-            IsAtTarget = false;
-            agent.isStopped = false;
+            IsAtTarget =
+                false;
+
+            agent.isStopped =
+                false;
+
             return;
         }
 
         if (HasReachedCoreTowerSlot())
         {
-            IsAtTarget = true;
-            agent.isStopped = true;
+            IsAtTarget =
+                true;
+
+            agent.isStopped =
+                true;
 
             RotateTowardsCoreTower();
 
             return;
         }
 
-        IsAtTarget = false;
-        agent.isStopped = false;
+        IsAtTarget =
+            false;
+
+        agent.isStopped =
+            false;
     }
+
 
     private bool HasReachedCoreTowerSlot()
     {
@@ -515,7 +719,9 @@ public class EnemyMovement : MonoBehaviour
             return false;
         }
 
-        if (float.IsInfinity(agent.remainingDistance))
+        if (float.IsInfinity(
+                agent.remainingDistance
+            ))
         {
             return false;
         }
@@ -524,17 +730,20 @@ public class EnemyMovement : MonoBehaviour
                slotArrivalDistance;
     }
 
+
     private void SetDestinationToPoint(
         Vector3 targetPosition
     )
     {
         if (!NavMesh.SamplePosition(
-            targetPosition,
-            out NavMeshHit hit,
-            navMeshSampleDistance,
-            agent.areaMask))
+                targetPosition,
+                out NavMeshHit hit,
+                navMeshSampleDistance,
+                agent.areaMask
+            ))
         {
-            hasCoreTowerDestination = false;
+            hasCoreTowerDestination =
+                false;
 
             Debug.LogWarning(
                 $"{name}: Could not find a NavMesh point " +
@@ -545,7 +754,8 @@ public class EnemyMovement : MonoBehaviour
             return;
         }
 
-        agent.stoppingDistance = 0f;
+        agent.stoppingDistance =
+            0f;
 
         bool destinationAccepted =
             agent.SetDestination(
@@ -565,6 +775,11 @@ public class EnemyMovement : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // DISTANCE CALCULATIONS
+    // =========================================================
+
     private float GetDesiredCenterDistance(
         Collider targetCollider
     )
@@ -582,6 +797,7 @@ public class EnemyMovement : MonoBehaviour
             targetRadius +
             stopGap;
     }
+
 
     private float GetEnemyHorizontalRadius()
     {
@@ -601,6 +817,7 @@ public class EnemyMovement : MonoBehaviour
         );
     }
 
+
     private float GetTargetHorizontalRadius(
         Collider targetCollider
     )
@@ -619,6 +836,11 @@ public class EnemyMovement : MonoBehaviour
         );
     }
 
+
+    // =========================================================
+    // ROTATION
+    // =========================================================
+
     private void RotateTowardsPlayer()
     {
         if (playerHealth == null)
@@ -630,10 +852,14 @@ public class EnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
-        RotateTowardsDirection(direction);
+        RotateTowardsDirection(
+            direction
+        );
     }
+
 
     private void RotateTowardsCoreTower()
     {
@@ -646,55 +872,87 @@ public class EnemyMovement : MonoBehaviour
             coreTower.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
-        RotateTowardsDirection(direction);
+        RotateTowardsDirection(
+            direction
+        );
     }
+
 
     private void RotateTowardsDirection(
         Vector3 direction
     )
     {
-        if (direction.sqrMagnitude < 0.001f)
+        if (direction.sqrMagnitude <
+            0.001f)
         {
             return;
         }
 
         Quaternion targetRotation =
-            Quaternion.LookRotation(direction);
+            Quaternion.LookRotation(
+                direction
+            );
 
         transform.rotation =
             Quaternion.RotateTowards(
                 transform.rotation,
                 targetRotation,
-                rotationSpeed * Time.deltaTime
+                rotationSpeed *
+                Time.deltaTime
             );
     }
+
+
+    // =========================================================
+    // SLOT / AGENT STATE
+    // =========================================================
 
     private void ReleaseCoreTowerSlot()
     {
         if (coreTowerAttackSlots != null)
         {
-            coreTowerAttackSlots.ReleaseSlot(this);
+            coreTowerAttackSlots
+                .ReleaseSlot(
+                    this
+                );
         }
 
-        currentCoreTowerSlot = null;
-        hasCoreTowerDestination = false;
+        currentCoreTowerSlot =
+            null;
+
+        hasCoreTowerDestination =
+            false;
     }
+
 
     private void StopAgent()
     {
-        IsAtTarget = false;
-        hasCoreTowerDestination = false;
-        hasPlayerDestination = false;
+        IsAtTarget =
+            false;
+
+        hasCoreTowerDestination =
+            false;
+
+        hasPlayerDestination =
+            false;
 
         if (agent != null &&
             agent.isOnNavMesh)
         {
-            agent.isStopped = true;
+            agent.isStopped =
+                true;
+
             agent.ResetPath();
         }
     }
+
+
+    // =========================================================
+    // DIAGNOSTICS
+    // =========================================================
 
     private void LogTargetSwitch(
         string oldTarget,
@@ -722,6 +980,11 @@ public class EnemyMovement : MonoBehaviour
                 ? playerAggro.DisengageRadius
                 : 0f;
 
+        float confirmationTime =
+            playerAggro != null
+                ? playerAggro.AggroConfirmationTime
+                : 0f;
+
         Debug.Log(
             $"{name}: target changed " +
             $"{oldTarget} -> {newTarget}. " +
@@ -732,12 +995,13 @@ public class EnemyMovement : MonoBehaviour
             $"Disengage Radius = " +
             $"{disengageRadius:F2}. " +
             $"Aggro confirmation = " +
-            $"{aggroConfirmationTime:F2}s. " +
+            $"{confirmationTime:F2}s. " +
             $"Switch count = " +
             $"{debugTargetSwitchCount}.",
             this
         );
     }
+
 
     private float GetCurrentDistanceToPlayer()
     {
@@ -750,10 +1014,12 @@ public class EnemyMovement : MonoBehaviour
             playerHealth.transform.position -
             transform.position;
 
-        direction.y = 0f;
+        direction.y =
+            0f;
 
         return direction.magnitude;
     }
+
 
     private void UpdateDebugInfo()
     {
@@ -789,7 +1055,9 @@ public class EnemyMovement : MonoBehaviour
 
         if (agent == null)
         {
-            debugIsOnNavMesh = false;
+            debugIsOnNavMesh =
+                false;
+
             return;
         }
 
@@ -829,18 +1097,24 @@ public class EnemyMovement : MonoBehaviour
             GetCurrentDistanceToPlayer();
     }
 
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
+
     private void OnDisable()
     {
         ResetAggroConfirmation();
         ReleaseCoreTowerSlot();
     }
 
+
     private void OnValidate()
     {
-        aggroConfirmationTime =
+        moveSpeed =
             Mathf.Max(
-                0f,
-                aggroConfirmationTime
+                0.01f,
+                moveSpeed
             );
     }
 }

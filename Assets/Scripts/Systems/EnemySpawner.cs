@@ -13,6 +13,17 @@ public class EnemySpawnGroup
     public GameObject EnemyPrefab => enemyPrefab;
     public int EnemyCount => enemyCount;
     public float SpawnInterval => spawnInterval;
+
+    public EnemySpawnGroup(
+        GameObject enemyPrefab,
+        int enemyCount,
+        float spawnInterval
+    )
+    {
+        this.enemyPrefab = enemyPrefab;
+        this.enemyCount = Mathf.Max(1, enemyCount);
+        this.spawnInterval = Mathf.Max(0f, spawnInterval);
+    }
 }
 
 public class EnemySpawner : MonoBehaviour

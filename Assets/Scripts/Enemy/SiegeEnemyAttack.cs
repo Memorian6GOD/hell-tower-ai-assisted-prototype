@@ -3,36 +3,117 @@ using UnityEngine;
 [RequireComponent(typeof(SiegeEnemyMovement))]
 public class SiegeEnemyAttack : MonoBehaviour
 {
-    [Header("Attack Settings")]
-    [SerializeField] private int attackDamage = 50;
-    [SerializeField] private float attackInterval = 1.5f;
-    [SerializeField] private float attackWindup = 0.6f;
+    [Header("Fallback Settings - Central Balance Overrides These")]
+
+    [SerializeField]
+    private int attackDamage = 50;
+
+    [SerializeField]
+    private float attackInterval = 1.5f;
+
+    [SerializeField]
+    private float attackWindup = 0.6f;
+
 
     [Header("Animation Settings")]
+
     [SerializeField]
     private EnemyAttackAnimation attackAnimation;
 
+
     [Header("Hit Effect")]
-    [SerializeField] private HitEffect hitEffectPrefab;
-    [SerializeField] private float hitEffectOffset = 0.15f;
+
+    [SerializeField]
+    private HitEffect hitEffectPrefab;
+
+    [SerializeField]
+    private float hitEffectOffset = 0.15f;
+
 
     [Header("Debug - Do Not Edit")]
-    [SerializeField] private string debugAttackTarget;
-    [SerializeField] private float debugAttackTimer;
-    [SerializeField] private bool debugCanAttack;
-    [SerializeField] private bool debugAnimationStarted;
+
+    [SerializeField]
+    private string debugAttackTarget;
+
+    [SerializeField]
+    private float debugAttackTimer;
+
+    [SerializeField]
+    private bool debugCanAttack;
+
+    [SerializeField]
+    private bool debugAnimationStarted;
+
 
     private SiegeEnemyMovement siegeMovement;
 
     private float attackTimer;
+
     private bool attackAnimationStarted;
+    private bool damageMultiplierApplied;
+    private bool hasStarted;
+
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureBaseAttack(
+        int newAttackDamage,
+        float newAttackInterval,
+        float newAttackWindup
+    )
+    {
+        if (hasStarted ||
+            damageMultiplierApplied)
+        {
+            return false;
+        }
+
+        if (newAttackDamage <= 0 ||
+            newAttackInterval <= 0f ||
+            newAttackWindup < 0f)
+        {
+            return false;
+        }
+
+        attackDamage =
+            Mathf.Max(
+                1,
+                newAttackDamage
+            );
+
+        attackInterval =
+            Mathf.Max(
+                0.01f,
+                newAttackInterval
+            );
+
+        attackWindup =
+            Mathf.Clamp(
+                newAttackWindup,
+                0f,
+                attackInterval
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
 
     private void Start()
     {
+        hasStarted =
+            true;
+
         siegeMovement =
             GetComponent<SiegeEnemyMovement>();
 
-        attackTimer = attackWindup;
+        attackTimer =
+            attackWindup;
 
         if (siegeMovement == null)
         {
@@ -49,6 +130,7 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
     }
 
+
     private void Update()
     {
         if (siegeMovement == null)
@@ -59,18 +141,27 @@ public class SiegeEnemyAttack : MonoBehaviour
         if (!siegeMovement.IsAtTarget)
         {
             ResetAttackCycle();
-            UpdateDebugInfo(false);
+
+            UpdateDebugInfo(
+                false
+            );
+
             return;
         }
 
         if (!CanAttackCurrentTarget())
         {
             ResetAttackCycle();
-            UpdateDebugInfo(false);
+
+            UpdateDebugInfo(
+                false
+            );
+
             return;
         }
 
-        attackTimer -= Time.deltaTime;
+        attackTimer -=
+            Time.deltaTime;
 
         if (!attackAnimationStarted &&
             attackTimer <= attackWindup)
@@ -82,12 +173,64 @@ public class SiegeEnemyAttack : MonoBehaviour
         {
             AttackCurrentTarget();
 
-            attackTimer = attackInterval;
-            attackAnimationStarted = false;
+            attackTimer =
+                attackInterval;
+
+            attackAnimationStarted =
+                false;
         }
 
-        UpdateDebugInfo(true);
+        UpdateDebugInfo(
+            true
+        );
     }
+
+
+    // =========================================================
+    // WAVE DAMAGE SCALING
+    // =========================================================
+
+    public void ApplyDamageMultiplier(
+        float damageMultiplier
+    )
+    {
+        if (damageMultiplierApplied)
+        {
+            Debug.LogWarning(
+                "SiegeEnemyAttack: Damage multiplier " +
+                "was already applied."
+            );
+
+            return;
+        }
+
+        if (damageMultiplier <= 0f)
+        {
+            Debug.LogWarning(
+                "SiegeEnemyAttack: Damage multiplier " +
+                "must be greater than 0."
+            );
+
+            return;
+        }
+
+        attackDamage =
+            Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    attackDamage *
+                    damageMultiplier
+                )
+            );
+
+        damageMultiplierApplied =
+            true;
+    }
+
+
+    // =========================================================
+    // TARGET VALIDATION
+    // =========================================================
 
     private bool CanAttackCurrentTarget()
     {
@@ -135,6 +278,11 @@ public class SiegeEnemyAttack : MonoBehaviour
         return true;
     }
 
+
+    // =========================================================
+    // ATTACK
+    // =========================================================
+
     private void AttackCurrentTarget()
     {
         if (siegeMovement.IsTargetingDefenseTower)
@@ -146,6 +294,7 @@ public class SiegeEnemyAttack : MonoBehaviour
             AttackCoreTower();
         }
     }
+
 
     private void AttackDefenseTower()
     {
@@ -163,7 +312,9 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
 
         Vector3 hitPosition =
-            GetHitPosition(targetCollider);
+            GetHitPosition(
+                targetCollider
+            );
 
         Debug.Log(
             gameObject.name +
@@ -183,6 +334,7 @@ public class SiegeEnemyAttack : MonoBehaviour
         );
     }
 
+
     private void AttackCoreTower()
     {
         CoreTowerHealth coreTower =
@@ -199,7 +351,9 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
 
         Vector3 hitPosition =
-            GetHitPosition(targetCollider);
+            GetHitPosition(
+                targetCollider
+            );
 
         Debug.Log(
             gameObject.name +
@@ -217,6 +371,7 @@ public class SiegeEnemyAttack : MonoBehaviour
         );
     }
 
+
     private Vector3 GetHitPosition(
         Collider targetCollider
     )
@@ -230,7 +385,8 @@ public class SiegeEnemyAttack : MonoBehaviour
             transform.position -
             hitPosition;
 
-        outwardDirection.y = 0f;
+        outwardDirection.y =
+            0f;
 
         if (outwardDirection.sqrMagnitude >
             0.001f)
@@ -242,6 +398,7 @@ public class SiegeEnemyAttack : MonoBehaviour
 
         return hitPosition;
     }
+
 
     private void SpawnHitEffect(
         Vector3 hitPosition
@@ -259,9 +416,15 @@ public class SiegeEnemyAttack : MonoBehaviour
         );
     }
 
+
+    // =========================================================
+    // ATTACK CYCLE
+    // =========================================================
+
     private void StartAttackAnimation()
     {
-        attackAnimationStarted = true;
+        attackAnimationStarted =
+            true;
 
         if (attackAnimation != null)
         {
@@ -271,10 +434,14 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
     }
 
+
     private void ResetAttackCycle()
     {
-        attackTimer = attackWindup;
-        attackAnimationStarted = false;
+        attackTimer =
+            attackWindup;
+
+        attackAnimationStarted =
+            false;
 
         if (attackAnimation != null)
         {
@@ -282,18 +449,29 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // DEBUG
+    // =========================================================
+
     private void UpdateDebugInfo(
         bool canAttack
     )
     {
-        debugCanAttack = canAttack;
-        debugAttackTimer = attackTimer;
+        debugCanAttack =
+            canAttack;
+
+        debugAttackTimer =
+            attackTimer;
+
         debugAnimationStarted =
             attackAnimationStarted;
 
         if (siegeMovement == null)
         {
-            debugAttackTarget = "None";
+            debugAttackTarget =
+                "None";
+
             return;
         }
 
@@ -309,7 +487,8 @@ public class SiegeEnemyAttack : MonoBehaviour
             }
             else
             {
-                debugAttackTarget = "None";
+                debugAttackTarget =
+                    "None";
             }
 
             return;
@@ -326,9 +505,15 @@ public class SiegeEnemyAttack : MonoBehaviour
         }
         else
         {
-            debugAttackTarget = "None";
+            debugAttackTarget =
+                "None";
         }
     }
+
+
+    // =========================================================
+    // CLEANUP
+    // =========================================================
 
     private void OnDisable()
     {

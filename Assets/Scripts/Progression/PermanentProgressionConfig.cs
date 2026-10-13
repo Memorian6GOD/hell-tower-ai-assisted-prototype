@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 [CreateAssetMenu(
@@ -7,250 +6,283 @@ using UnityEngine;
 )]
 public class PermanentProgressionConfig : ScriptableObject
 {
-    [Header("Level Progression")]
-    [SerializeField, Min(1)]
-    private int purchasesPerRequiredBranch = 10;
+    [Header("Master Balance Source")]
 
-    [Header("Hero Damage")]
-    [SerializeField, Min(0.01f)]
-    private float heroDamagePerPurchase = 2f;
+    [Tooltip(
+        "Temporary compatibility reference. " +
+        "All permanent progression balance values are now " +
+        "stored in GameBalanceConfig."
+    )]
+    [SerializeField]
+    private GameBalanceConfig balanceConfig;
 
-    [SerializeField, Min(1)]
-    private int heroDamageStartingPrice = 100;
 
-    [SerializeField, Min(0)]
-    private int heroDamagePriceIncreasePerPurchase = 75;
-
-    [Header("Hero Critical Chance")]
-    [SerializeField, Min(0.01f)]
-    private float heroCriticalChancePointsPerPurchase = 0.5f;
-
-    [SerializeField, Min(1)]
-    private int heroCriticalChanceStartingPrice = 100;
-
-    [SerializeField, Min(0)]
-    private int heroCriticalChancePriceIncreasePerPurchase = 75;
-
-    [Header("Hero Attack Speed")]
-    [SerializeField, Min(0.01f)]
-    private float heroAttackSpeedPercentPerPurchase = 2f;
-
-    [SerializeField, Min(1)]
-    private int heroAttackSpeedStartingPrice = 100;
-
-    [SerializeField, Min(0)]
-    private int heroAttackSpeedPriceIncreasePerPurchase = 75;
-
-    [Header("Shared Maximum Health")]
-    [SerializeField, Min(1)]
-    private int sharedMaxHealthPurchasesPerHeroLevel = 5;
-
-    [SerializeField, Min(0.01f)]
-    private float sharedMaxHealthPercentPerPurchase = 5f;
-
-    [SerializeField, Min(1)]
-    private int sharedMaxHealthStartingPrice = 100;
-
-    [SerializeField, Min(0)]
-    private int sharedMaxHealthPriceIncreasePerPurchase = 75;
-
-    public int PurchasesPerRequiredBranch =>
-        Mathf.Max(1, purchasesPerRequiredBranch);
-
-    public float HeroDamagePerPurchase =>
-        Mathf.Max(0.01f, heroDamagePerPurchase);
-
-    public float HeroCriticalChancePointsPerPurchase =>
-        Mathf.Max(0.01f, heroCriticalChancePointsPerPurchase);
-
-    public float HeroAttackSpeedPercentPerPurchase =>
-        Mathf.Max(0.01f, heroAttackSpeedPercentPerPurchase);
-
-    public int SharedMaxHealthPurchasesPerHeroLevel =>
-        Mathf.Max(1, sharedMaxHealthPurchasesPerHeroLevel);
-
-    public float SharedMaxHealthPercentPerPurchase =>
-        Mathf.Max(0.01f, sharedMaxHealthPercentPerPurchase);
-
-    public int GetHeroDamagePurchasePrice(int currentPurchaseCount)
+    public int PurchasesPerRequiredBranch
     {
-        int safePurchaseCount = Mathf.Max(0, currentPurchaseCount);
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 1;
+            }
 
-        long price =
-            (long)Mathf.Max(1, heroDamageStartingPrice)
-            + (long)Mathf.Max(
-                0,
-                heroDamagePriceIncreasePerPurchase
-            ) * safePurchaseCount;
+            return balanceConfig
+                .PurchasesPerRequiredBranch;
+        }
+    }
 
-        return (int)Math.Min(int.MaxValue, price);
+    public float HeroDamagePerPurchase
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return
+                balanceConfig.HeroBaseDamage *
+                balanceConfig.HeroDamagePercentPerPurchase /
+                100f;
+        }
+    }
+
+    public float HeroCriticalChancePointsPerPurchase
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig
+                .HeroCriticalChancePointsPerPurchase;
+        }
+    }
+
+    public float HeroAttackSpeedPercentPerPurchase
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig
+                .HeroAttackSpeedPercentPerPurchase;
+        }
+    }
+
+    public int SharedMaxHealthPurchasesPerHeroLevel
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 1;
+            }
+
+            return balanceConfig
+                .SharedMaxHealthPurchasesPerHeroLevel;
+        }
+    }
+
+    public float SharedMaxHealthPercentPerPurchase
+    {
+        get
+        {
+            if (balanceConfig == null)
+            {
+                return 0f;
+            }
+
+            return balanceConfig
+                .SharedMaxHealthPercentPerPurchase;
+        }
+    }
+
+
+    public int GetHeroDamagePurchasePrice(
+        int currentPurchaseCount
+    )
+    {
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
+
+        return balanceConfig
+            .GetHeroDamagePurchasePrice(
+                currentPurchaseCount
+            );
     }
 
     public int GetHeroCriticalChancePurchasePrice(
         int currentPurchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, currentPurchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
 
-        long price =
-            (long)Mathf.Max(
-                1,
-                heroCriticalChanceStartingPrice
-            )
-            + (long)Mathf.Max(
-                0,
-                heroCriticalChancePriceIncreasePerPurchase
-            ) * safePurchaseCount;
-
-        return (int)Math.Min(int.MaxValue, price);
+        return balanceConfig
+            .GetHeroCriticalChancePurchasePrice(
+                currentPurchaseCount
+            );
     }
 
     public int GetHeroAttackSpeedPurchasePrice(
         int currentPurchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, currentPurchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
 
-        long price =
-            (long)Mathf.Max(1, heroAttackSpeedStartingPrice)
-            + (long)Mathf.Max(
-                0,
-                heroAttackSpeedPriceIncreasePerPurchase
-            ) * safePurchaseCount;
-
-        return (int)Math.Min(int.MaxValue, price);
+        return balanceConfig
+            .GetHeroAttackSpeedPurchasePrice(
+                currentPurchaseCount
+            );
     }
 
     public int GetSharedMaxHealthPurchasePrice(
         int currentPurchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, currentPurchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
 
-        long price =
-            (long)Mathf.Max(1, sharedMaxHealthStartingPrice)
-            + (long)Mathf.Max(
-                0,
-                sharedMaxHealthPriceIncreasePerPurchase
-            ) * safePurchaseCount;
-
-        return (int)Math.Min(int.MaxValue, price);
+        return balanceConfig
+            .GetSharedMaxHealthPurchasePrice(
+                currentPurchaseCount
+            );
     }
+
 
     public int GetRequiredHeroDamagePurchases(
         int currentHeroLevel
     )
     {
-        int safeHeroLevel = Mathf.Max(1, currentHeroLevel);
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
 
-        return MultiplyAndClampToIntMax(
-            safeHeroLevel,
-            PurchasesPerRequiredBranch
-        );
+        return balanceConfig
+            .GetRequiredHeroDamagePurchases(
+                currentHeroLevel
+            );
     }
 
     public int GetRequiredHeroCriticalChancePurchases(
         int currentHeroLevel
     )
     {
-        int safeHeroLevel = Mathf.Max(1, currentHeroLevel);
-
-        if (safeHeroLevel < 3)
+        if (balanceConfig == null)
         {
             return 0;
         }
 
-        return MultiplyAndClampToIntMax(
-            safeHeroLevel - 2,
-            PurchasesPerRequiredBranch
-        );
+        return balanceConfig
+            .GetRequiredHeroCriticalChancePurchases(
+                currentHeroLevel
+            );
     }
 
     public int GetRequiredHeroAttackSpeedPurchases(
         int currentHeroLevel
     )
     {
-        int safeHeroLevel = Mathf.Max(1, currentHeroLevel);
-
-        if (safeHeroLevel < 5)
+        if (balanceConfig == null)
         {
             return 0;
         }
 
-        return MultiplyAndClampToIntMax(
-            safeHeroLevel - 4,
-            PurchasesPerRequiredBranch
-        );
+        return balanceConfig
+            .GetRequiredHeroAttackSpeedPurchases(
+                currentHeroLevel
+            );
     }
 
     public int GetSharedMaxHealthPurchaseLimit(
         int currentHeroLevel
     )
     {
-        int safeHeroLevel = Mathf.Max(1, currentHeroLevel);
+        if (balanceConfig == null)
+        {
+            return 0;
+        }
 
-        return MultiplyAndClampToIntMax(
-            safeHeroLevel,
-            SharedMaxHealthPurchasesPerHeroLevel
-        );
+        return balanceConfig
+            .GetSharedMaxHealthPurchaseLimit(
+                currentHeroLevel
+            );
     }
 
-    public float GetTotalHeroDamageBonus(int purchaseCount)
+
+    public float GetTotalHeroDamageBonus(
+        int purchaseCount
+    )
     {
-        int safePurchaseCount = Mathf.Max(0, purchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0f;
+        }
 
-        double bonus =
-            safePurchaseCount
-            * (double)HeroDamagePerPurchase;
-
-        return (float)Math.Min(float.MaxValue, bonus);
+        return balanceConfig
+            .GetTotalHeroDamageBonus(
+                purchaseCount
+            );
     }
 
     public float GetTotalHeroCriticalChanceBonusPoints(
         int purchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, purchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0f;
+        }
 
-        double bonus =
-            safePurchaseCount
-            * (double)HeroCriticalChancePointsPerPurchase;
-
-        return (float)Math.Min(float.MaxValue, bonus);
+        return balanceConfig
+            .GetTotalHeroCriticalChanceBonusPoints(
+                purchaseCount
+            );
     }
 
     public float GetTotalHeroAttackSpeedBonusPercent(
         int purchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, purchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0f;
+        }
 
-        double bonus =
-            safePurchaseCount
-            * (double)HeroAttackSpeedPercentPerPurchase;
-
-        return (float)Math.Min(float.MaxValue, bonus);
+        return balanceConfig
+            .GetTotalHeroAttackSpeedBonusPercent(
+                purchaseCount
+            );
     }
 
     public float GetTotalSharedMaxHealthBonusPercent(
         int purchaseCount
     )
     {
-        int safePurchaseCount = Mathf.Max(0, purchaseCount);
+        if (balanceConfig == null)
+        {
+            return 0f;
+        }
 
-        double bonus =
-            safePurchaseCount
-            * (double)SharedMaxHealthPercentPerPurchase;
-
-        return (float)Math.Min(float.MaxValue, bonus);
-    }
-
-    private static int MultiplyAndClampToIntMax(
-        int firstValue,
-        int secondValue
-    )
-    {
-        long result = (long)firstValue * secondValue;
-        return (int)Math.Min(int.MaxValue, result);
+        return balanceConfig
+            .GetTotalSharedMaxHealthBonusPercent(
+                purchaseCount
+            );
     }
 }

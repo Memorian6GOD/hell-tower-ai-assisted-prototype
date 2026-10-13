@@ -8,7 +8,8 @@ public class EnemyHealth : MonoBehaviour
     private const float PoisonTimeEpsilon = 0.0001f;
 
     [Header("Health Settings")]
-    [SerializeField] private int maxHealth = 100;
+    [SerializeField]
+    private int maxHealth = 100;
 
     [Header("Health Bar Settings")]
     [SerializeField]
@@ -50,9 +51,17 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField]
     private float debugCurrentAgentSpeed;
 
+
     private int currentHealth;
     private EnemyHealthBar healthBar;
+
     private bool healthMultiplierApplied;
+    private bool hasStarted;
+
+
+    // =========================================================
+    // POISON STATE
+    // =========================================================
 
     private bool poisonActive;
     private int poisonTickDamage;
@@ -60,18 +69,40 @@ public class EnemyHealth : MonoBehaviour
     private float poisonNextTickTime;
     private float poisonTickInterval;
 
+
+    // =========================================================
+    // STUN STATE
+    // =========================================================
+
     private bool stunActive;
     private float stunExpireTime;
     private Quaternion stunFrozenRotation;
+
+
+    // =========================================================
+    // SLOW STATE
+    // =========================================================
 
     private bool slowActive;
     private float slowPercent;
     private float slowExpireTime;
 
+
+    // =========================================================
+    // NAVMESH / STATUS STATE
+    // =========================================================
+
     private NavMeshAgent statusAgent;
+
     private float baseAgentSpeed;
     private float baseAgentAngularSpeed;
+
     private bool baseAgentValuesCaptured;
+
+
+    // =========================================================
+    // STUNNED ATTACK BEHAVIOURS
+    // =========================================================
 
     private readonly List<MonoBehaviour>
         stunAttackBehaviours = new();
@@ -79,11 +110,24 @@ public class EnemyHealth : MonoBehaviour
     private readonly List<bool>
         stunAttackBehaviourWasEnabled = new();
 
+
+    // =========================================================
+    // PUBLIC STATE
+    // =========================================================
+
     public event Action<EnemyHealth> Died;
 
-    public int CurrentHealth => currentHealth;
-    public int MaxHealth => maxHealth;
-    public bool IsDead { get; private set; }
+    public int CurrentHealth =>
+        currentHealth;
+
+    public int MaxHealth =>
+        maxHealth;
+
+    public bool IsDead
+    {
+        get;
+        private set;
+    }
 
     public bool IsPoisoned =>
         poisonActive;
@@ -94,10 +138,46 @@ public class EnemyHealth : MonoBehaviour
     public bool IsSlowed =>
         slowActive;
 
+
+    // =========================================================
+    // CENTRAL BALANCE CONFIGURATION
+    // =========================================================
+
+    public bool ConfigureBaseMaxHealth(
+        int newBaseMaxHealth
+    )
+    {
+        if (hasStarted ||
+            healthMultiplierApplied ||
+            newBaseMaxHealth <= 0)
+        {
+            return false;
+        }
+
+        maxHealth =
+            Mathf.Max(
+                1,
+                newBaseMaxHealth
+            );
+
+        return true;
+    }
+
+
+    // =========================================================
+    // UNITY
+    // =========================================================
+
     private void Start()
     {
-        currentHealth = maxHealth;
-        IsDead = false;
+        hasStarted =
+            true;
+
+        currentHealth =
+            maxHealth;
+
+        IsDead =
+            false;
 
         healthBar =
             GetComponentInChildren<EnemyHealthBar>(
@@ -154,7 +234,14 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
-    public void ApplyHealthMultiplier(float healthMultiplier)
+
+    // =========================================================
+    // WAVE HEALTH SCALING
+    // =========================================================
+
+    public void ApplyHealthMultiplier(
+        float healthMultiplier
+    )
     {
         if (healthMultiplierApplied)
         {
@@ -174,17 +261,27 @@ public class EnemyHealth : MonoBehaviour
             return;
         }
 
-        maxHealth = Mathf.Max(
-            1,
-            Mathf.CeilToInt(
-                maxHealth * healthMultiplier
-            )
-        );
+        maxHealth =
+            Mathf.Max(
+                1,
+                Mathf.CeilToInt(
+                    maxHealth *
+                    healthMultiplier
+                )
+            );
 
-        healthMultiplierApplied = true;
+        healthMultiplierApplied =
+            true;
     }
 
-    public void TakeDamage(int damageAmount)
+
+    // =========================================================
+    // DAMAGE
+    // =========================================================
+
+    public void TakeDamage(
+        int damageAmount
+    )
     {
         if (IsDead)
         {
@@ -196,11 +293,13 @@ public class EnemyHealth : MonoBehaviour
             return;
         }
 
-        currentHealth -= damageAmount;
+        currentHealth -=
+            damageAmount;
 
         if (currentHealth < 0)
         {
-            currentHealth = 0;
+            currentHealth =
+                0;
         }
 
         Debug.Log(
@@ -221,6 +320,11 @@ public class EnemyHealth : MonoBehaviour
             Die();
         }
     }
+
+
+    // =========================================================
+    // POISON
+    // =========================================================
 
     public bool TryApplyPoison(
         int sourceHitDamage,
@@ -259,7 +363,8 @@ public class EnemyHealth : MonoBehaviour
             // A successful re-application refreshes ONLY duration.
             // Damage and next tick time intentionally stay unchanged.
             poisonExpireTime =
-                now + duration;
+                now +
+                duration;
 
             Debug.Log(
                 "EnemyHealth: Poison duration refreshed. " +
@@ -286,12 +391,15 @@ public class EnemyHealth : MonoBehaviour
             tickInterval;
 
         poisonNextTickTime =
-            now + poisonTickInterval;
+            now +
+            poisonTickInterval;
 
         poisonExpireTime =
-            now + duration;
+            now +
+            duration;
 
-        poisonActive = true;
+        poisonActive =
+            true;
 
         Debug.Log(
             "EnemyHealth: Poison applied. " +
@@ -306,6 +414,11 @@ public class EnemyHealth : MonoBehaviour
 
         return true;
     }
+
+
+    // =========================================================
+    // STUN
+    // =========================================================
 
     public bool TryApplyStun(
         float duration
@@ -335,7 +448,8 @@ public class EnemyHealth : MonoBehaviour
         {
             // Re-application refreshes only the remaining duration.
             stunExpireTime =
-                now + duration;
+                now +
+                duration;
 
             Debug.Log(
                 "EnemyHealth: Stun duration refreshed. " +
@@ -348,9 +462,12 @@ public class EnemyHealth : MonoBehaviour
             return true;
         }
 
-        stunActive = true;
+        stunActive =
+            true;
+
         stunExpireTime =
-            now + duration;
+            now +
+            duration;
 
         stunFrozenRotation =
             transform.rotation;
@@ -370,6 +487,11 @@ public class EnemyHealth : MonoBehaviour
 
         return true;
     }
+
+
+    // =========================================================
+    // SLOW
+    // =========================================================
 
     public bool TryApplySlow(
         float movementReductionPercent,
@@ -412,7 +534,8 @@ public class EnemyHealth : MonoBehaviour
         bool wasActive =
             slowActive;
 
-        slowActive = true;
+        slowActive =
+            true;
 
         slowPercent =
             Mathf.Clamp(
@@ -422,7 +545,8 @@ public class EnemyHealth : MonoBehaviour
             );
 
         slowExpireTime =
-            now + duration;
+            now +
+            duration;
 
         ApplyMovementStatusToAgent();
 
@@ -452,6 +576,11 @@ public class EnemyHealth : MonoBehaviour
         return true;
     }
 
+
+    // =========================================================
+    // HEALTH BAR
+    // =========================================================
+
     public void ShowHealthBar()
     {
         if (healthBar != null)
@@ -467,6 +596,11 @@ public class EnemyHealth : MonoBehaviour
             healthBar.Hide();
         }
     }
+
+
+    // =========================================================
+    // POISON UPDATE
+    // =========================================================
 
     private void UpdatePoison()
     {
@@ -485,8 +619,7 @@ public class EnemyHealth : MonoBehaviour
             Time.time;
 
         // The tick scheduled exactly at the poison expiration time
-        // is still valid. With 5 s duration and 2.5 s interval this
-        // gives ticks at 2.5 s and 5.0 s.
+        // is still valid.
         while (
             poisonActive &&
             now + PoisonTimeEpsilon >=
@@ -531,6 +664,11 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // SLOW UPDATE
+    // =========================================================
+
     private void UpdateSlow()
     {
         if (!slowActive)
@@ -557,6 +695,11 @@ public class EnemyHealth : MonoBehaviour
 
         ClearSlowState();
     }
+
+
+    // =========================================================
+    // STUN UPDATE
+    // =========================================================
 
     private void UpdateStun()
     {
@@ -592,6 +735,11 @@ public class EnemyHealth : MonoBehaviour
         ClearStunState();
     }
 
+
+    // =========================================================
+    // MOVEMENT STATUS
+    // =========================================================
+
     private void FreezeMovementForStun()
     {
         EnsureBaseAgentValuesCaptured();
@@ -626,7 +774,8 @@ public class EnemyHealth : MonoBehaviour
         baseAgentAngularSpeed =
             statusAgent.angularSpeed;
 
-        baseAgentValuesCaptured = true;
+        baseAgentValuesCaptured =
+            true;
     }
 
     private void ApplyMovementStatusToAgent()
@@ -641,8 +790,12 @@ public class EnemyHealth : MonoBehaviour
 
         if (stunActive)
         {
-            statusAgent.speed = 0f;
-            statusAgent.angularSpeed = 0f;
+            statusAgent.speed =
+                0f;
+
+            statusAgent.angularSpeed =
+                0f;
+
             return;
         }
 
@@ -665,6 +818,11 @@ public class EnemyHealth : MonoBehaviour
             baseAgentSpeed;
     }
 
+
+    // =========================================================
+    // STUN ATTACK DISABLING
+    // =========================================================
+
     private void DisableAttackBehavioursForStun()
     {
         stunAttackBehaviours.Clear();
@@ -673,8 +831,10 @@ public class EnemyHealth : MonoBehaviour
         MonoBehaviour[] behaviours =
             GetComponents<MonoBehaviour>();
 
-        foreach (MonoBehaviour behaviour
-                 in behaviours)
+        foreach (
+            MonoBehaviour behaviour
+            in behaviours
+        )
         {
             if (behaviour == null ||
                 behaviour == this)
@@ -683,11 +843,14 @@ public class EnemyHealth : MonoBehaviour
             }
 
             string typeName =
-                behaviour.GetType().Name;
+                behaviour
+                    .GetType()
+                    .Name;
 
             if (!typeName.EndsWith(
                     "EnemyAttack",
-                    StringComparison.Ordinal))
+                    StringComparison.Ordinal
+                ))
             {
                 continue;
             }
@@ -700,7 +863,8 @@ public class EnemyHealth : MonoBehaviour
                 behaviour.enabled
             );
 
-            behaviour.enabled = false;
+            behaviour.enabled =
+                false;
         }
     }
 
@@ -712,9 +876,11 @@ public class EnemyHealth : MonoBehaviour
                 stunAttackBehaviourWasEnabled.Count
             );
 
-        for (int i = 0;
-             i < restoreCount;
-             i++)
+        for (
+            int i = 0;
+            i < restoreCount;
+            i++
+        )
         {
             MonoBehaviour behaviour =
                 stunAttackBehaviours[i];
@@ -729,13 +895,20 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // BOSS CHECK
+    // =========================================================
+
     private bool IsBossEnemy()
     {
         MonoBehaviour[] behaviours =
             GetComponents<MonoBehaviour>();
 
-        foreach (MonoBehaviour behaviour
-                 in behaviours)
+        foreach (
+            MonoBehaviour behaviour
+            in behaviours
+        )
         {
             if (behaviour == null)
             {
@@ -752,6 +925,11 @@ public class EnemyHealth : MonoBehaviour
         return false;
     }
 
+
+    // =========================================================
+    // DEBUG REFRESH
+    // =========================================================
+
     private void RefreshSlowDebugInfo()
     {
         debugSlowActive =
@@ -766,7 +944,8 @@ public class EnemyHealth : MonoBehaviour
             slowActive
                 ? Mathf.Max(
                     0f,
-                    slowExpireTime - Time.time
+                    slowExpireTime -
+                    Time.time
                 )
                 : 0f;
 
@@ -774,16 +953,6 @@ public class EnemyHealth : MonoBehaviour
             statusAgent != null
                 ? statusAgent.speed
                 : 0f;
-    }
-
-    private void ClearSlowState()
-    {
-        slowActive = false;
-        slowPercent = 0f;
-        slowExpireTime = 0f;
-
-        ApplyMovementStatusToAgent();
-        RefreshSlowDebugInfo();
     }
 
     private void RefreshStunDebugInfo()
@@ -795,7 +964,8 @@ public class EnemyHealth : MonoBehaviour
             stunActive
                 ? Mathf.Max(
                     0f,
-                    stunExpireTime - Time.time
+                    stunExpireTime -
+                    Time.time
                 )
                 : 0f;
 
@@ -803,28 +973,6 @@ public class EnemyHealth : MonoBehaviour
             stunActive
                 ? stunAttackBehaviours.Count
                 : 0;
-    }
-
-    private void ClearStunState()
-    {
-        if (!stunActive &&
-            stunAttackBehaviours.Count == 0)
-        {
-            RefreshStunDebugInfo();
-            return;
-        }
-
-        stunActive = false;
-        stunExpireTime = 0f;
-
-        RestoreAttackBehavioursAfterStun();
-        ApplyMovementStatusToAgent();
-
-        stunAttackBehaviours.Clear();
-        stunAttackBehaviourWasEnabled.Clear();
-
-        RefreshStunDebugInfo();
-        RefreshSlowDebugInfo();
     }
 
     private void RefreshPoisonDebugInfo()
@@ -839,8 +987,12 @@ public class EnemyHealth : MonoBehaviour
 
         if (!poisonActive)
         {
-            debugPoisonRemainingDuration = 0f;
-            debugPoisonTimeUntilNextTick = 0f;
+            debugPoisonRemainingDuration =
+                0f;
+
+            debugPoisonTimeUntilNextTick =
+                0f;
+
             return;
         }
 
@@ -850,26 +1002,87 @@ public class EnemyHealth : MonoBehaviour
         debugPoisonRemainingDuration =
             Mathf.Max(
                 0f,
-                poisonExpireTime - now
+                poisonExpireTime -
+                now
             );
 
         debugPoisonTimeUntilNextTick =
             Mathf.Max(
                 0f,
-                poisonNextTickTime - now
+                poisonNextTickTime -
+                now
             );
+    }
+
+
+    // =========================================================
+    // STATUS CLEANUP
+    // =========================================================
+
+    private void ClearSlowState()
+    {
+        slowActive =
+            false;
+
+        slowPercent =
+            0f;
+
+        slowExpireTime =
+            0f;
+
+        ApplyMovementStatusToAgent();
+        RefreshSlowDebugInfo();
+    }
+
+    private void ClearStunState()
+    {
+        if (!stunActive &&
+            stunAttackBehaviours.Count == 0)
+        {
+            RefreshStunDebugInfo();
+            return;
+        }
+
+        stunActive =
+            false;
+
+        stunExpireTime =
+            0f;
+
+        RestoreAttackBehavioursAfterStun();
+        ApplyMovementStatusToAgent();
+
+        stunAttackBehaviours.Clear();
+        stunAttackBehaviourWasEnabled.Clear();
+
+        RefreshStunDebugInfo();
+        RefreshSlowDebugInfo();
     }
 
     private void ClearPoisonState()
     {
-        poisonActive = false;
-        poisonTickDamage = 0;
-        poisonExpireTime = 0f;
-        poisonNextTickTime = 0f;
-        poisonTickInterval = 0f;
+        poisonActive =
+            false;
+
+        poisonTickDamage =
+            0;
+
+        poisonExpireTime =
+            0f;
+
+        poisonNextTickTime =
+            0f;
+
+        poisonTickInterval =
+            0f;
 
         RefreshPoisonDebugInfo();
     }
+
+
+    // =========================================================
+    // DEATH
+    // =========================================================
 
     private void Die()
     {
@@ -878,14 +1091,19 @@ public class EnemyHealth : MonoBehaviour
             return;
         }
 
-        IsDead = true;
+        IsDead =
+            true;
 
         ClearPoisonState();
         ClearStunState();
         ClearSlowState();
 
-        Died?.Invoke(this);
+        Died?.Invoke(
+            this
+        );
 
-        Destroy(gameObject);
+        Destroy(
+            gameObject
+        );
     }
 }
