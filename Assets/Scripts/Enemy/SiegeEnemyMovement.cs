@@ -580,12 +580,25 @@ public class SiegeEnemyMovement : MonoBehaviour
 
         if (repathTimer <= 0f)
         {
-            SetDestinationNearTarget(
-                targetCollider
-            );
+            bool destinationSet =
+                SetDestinationNearTarget(
+                    targetCollider
+                );
 
             repathTimer =
                 repathInterval;
+
+            if (!destinationSet &&
+                IsTargetingDefenseTower)
+            {
+                ClearDefenseTowerTarget();
+
+                targetSearchTimer =
+                    0f;
+
+                repathTimer =
+                    0f;
+            }
         }
     }
 
@@ -616,7 +629,7 @@ public class SiegeEnemyMovement : MonoBehaviour
     }
 
 
-    private void SetDestinationNearTarget(
+    private bool SetDestinationNearTarget(
         Collider targetCollider
     )
     {
@@ -626,18 +639,23 @@ public class SiegeEnemyMovement : MonoBehaviour
             ))
         {
             agent.ResetPath();
-            return;
+            return false;
         }
 
         agent.stoppingDistance =
             arrivalTolerance;
 
-        if (!agent.SetDestination(
+        bool destinationAccepted =
+            agent.SetDestination(
                 approachPosition
-            ))
+            );
+
+        if (!destinationAccepted)
         {
             agent.ResetPath();
         }
+
+        return destinationAccepted;
     }
 
 
