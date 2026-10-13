@@ -137,6 +137,54 @@ public class WaveManager : MonoBehaviour
     }
 
 
+    [ContextMenu("Test/Spawn Siege Enemy")]
+    private void TestSpawnSiegeEnemy()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.LogWarning(
+                "WaveManager: Siege test spawn works only in Play Mode.",
+                this
+            );
+
+            return;
+        }
+
+        if (enemySpawner == null)
+        {
+            Debug.LogWarning(
+                "WaveManager: Enemy Spawner is not assigned.",
+                this
+            );
+
+            return;
+        }
+
+        if (siegeEnemyPrefab == null)
+        {
+            Debug.LogWarning(
+                "WaveManager: Siege Enemy Prefab is not assigned.",
+                this
+            );
+
+            return;
+        }
+
+        GameObject spawnedSiege =
+            enemySpawner.TrySpawnPrefab(
+                siegeEnemyPrefab
+            );
+
+        if (spawnedSiege != null)
+        {
+            Debug.Log(
+                "WaveManager: Test Siege Enemy spawned.",
+                spawnedSiege
+            );
+        }
+    }
+
+
     public bool TryStartWave()
     {
         if (!Application.isPlaying)
