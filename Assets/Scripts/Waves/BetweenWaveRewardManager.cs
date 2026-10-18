@@ -36,6 +36,12 @@ public class BetweenWaveRewardManager : MonoBehaviour
     private int lastCoreTowerHealthRestored;
 
     [SerializeField]
+    private int lastDefenseTowerHealthRestored;
+
+    [SerializeField]
+    private int lastDefenseTowersHealed;
+
+    [SerializeField]
     private BetweenWaveRewardType lastResolvedRewardType;
 
     private bool waveEventSubscribed;
@@ -218,31 +224,56 @@ public class BetweenWaveRewardManager : MonoBehaviour
             return;
         }
 
-        float restorePercent =
-            balanceConfig
-                .BetweenWaveHealthRestorePercent;
+        float heroPercent =
+            balanceConfig.BetweenWaveHeroHealthRestorePercent;
+        float corePercent =
+            balanceConfig.BetweenWaveCoreTowerHealthRestorePercent;
+        float towerPercent =
+            balanceConfig.BetweenWaveDefenseTowerHealthRestorePercent;
 
         lastHeroHealthRestored =
             playerHealth != null
-                ? playerHealth.RestoreHealthPercent(
-                    restorePercent
-                )
+                ? playerHealth.RestoreHealthPercent(heroPercent)
                 : 0;
 
         lastCoreTowerHealthRestored =
             coreTowerHealth != null
-                ? coreTowerHealth.RestoreHealthPercent(
-                    restorePercent
-                )
+                ? coreTowerHealth.RestoreHealthPercent(corePercent)
                 : 0;
+
+        lastDefenseTowerHealthRestored = 0;
+        lastDefenseTowersHealed = 0;
+
+        DefenseTowerHealth[] towers =
+            FindObjectsByType<DefenseTowerHealth>(
+                FindObjectsInactive.Exclude
+            );
+
+        foreach (DefenseTowerHealth tower in towers)
+        {
+            if (tower == null || tower.IsDestroyed)
+            {
+                continue;
+            }
+
+            int restored = tower.RestoreHealthPercent(towerPercent);
+            if (restored <= 0)
+            {
+                continue;
+            }
+
+            lastDefenseTowerHealthRestored += restored;
+            lastDefenseTowersHealed++;
+        }
 
         Debug.Log(
             "BetweenWaveRewardManager: Wave " +
             $"{completedWave} health reward resolved. " +
-            $"Restore percent = {restorePercent:F1}%. " +
-            $"Hero restored {lastHeroHealthRestored} HP. " +
-            "CoreTower restored " +
-            $"{lastCoreTowerHealthRestored} HP.",
+            $"Hero ({heroPercent:F1}%) restored {lastHeroHealthRestored} HP. " +
+            $"CoreTower ({corePercent:F1}%) restored {lastCoreTowerHealthRestored} HP. " +
+            $"Defense towers ({towerPercent:F1}%): " +
+            $"{lastDefenseTowersHealed} healed, " +
+            $"{lastDefenseTowerHealthRestored} total HP restored.",
             this
         );
     }

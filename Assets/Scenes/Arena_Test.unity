@@ -2925,9 +2925,9 @@ MonoBehaviour:
   playerHealth: {fileID: 2079961573}
   playerAttack: {fileID: 0}
   balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
-  useDebugTestPool: 0
-  debugTestCategory: 0
-  debugTestUpgradeTypes: 10000000
+  useDebugTestPool: 1
+  debugTestCategory: 1
+  debugTestUpgradeTypes: 12000000
   selectionInProgress: 0
   debugCurrentCategory: 0
   debugHeroDamageStacks: 0
@@ -2942,6 +2942,8 @@ MonoBehaviour:
   debugHeroCritStrongStacks: 0
   debugHeroHealthStacks: 0
   debugHeroHealthStrongStacks: 0
+  debugTowerHealthStacks: 0
+  debugTowerHealthStrongStacks: 0
   debugHeroDoubleShotStacks: 0
   debugHeroRicochetStacks: 0
   debugHeroPoisonStacks: 0
@@ -2969,6 +2971,8 @@ MonoBehaviour:
   lastCompletedWave: 0
   lastHeroHealthRestored: 0
   lastCoreTowerHealthRestored: 0
+  lastDefenseTowerHealthRestored: 0
+  lastDefenseTowersHealed: 0
   lastResolvedRewardType: 0
 --- !u!1 &1323950012
 GameObject:
@@ -4753,6 +4757,10 @@ PrefabInstance:
     - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: logShotDamage
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
+      propertyPath: forceStunProcForDebug
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1634698028074985724, guid: f17bc9d0874c7d24f942c938395a9877, type: 3}
       propertyPath: stunPrimaryApplyChance

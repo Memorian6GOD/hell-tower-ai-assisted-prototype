@@ -28,7 +28,12 @@ public enum RunUpgradeType
     HeroRicochet,
     HeroPoison,
     HeroStun,
-    HeroSlow
+    HeroSlow,
+
+    // IMPORTANT:
+    // New enum values must only be appended at the end.
+    TowerHealth,
+    TowerHealthStrong
 }
 
 
@@ -87,6 +92,9 @@ public sealed class RunUpgradeDefinition
 
                 case RunUpgradeType.HeroHealth:
                 case RunUpgradeType.HeroHealthStrong:
+
+                case RunUpgradeType.TowerHealth:
+                case RunUpgradeType.TowerHealthStrong:
 
                     return true;
 
@@ -168,6 +176,8 @@ public sealed class RunUpgradeDefinition
                 case RunUpgradeType.TowerAttackSpeed:
                 case RunUpgradeType.TowerDamageStrong:
                 case RunUpgradeType.TowerAttackSpeedStrong:
+                case RunUpgradeType.TowerHealth:
+                case RunUpgradeType.TowerHealthStrong:
 
                     return RunUpgradeCategory.DefenseTower;
 
@@ -331,6 +341,15 @@ public sealed class RunUpgradeDefinition
                     "%.";
 
 
+            case RunUpgradeType.TowerHealth:
+            case RunUpgradeType.TowerHealthStrong:
+
+                return
+                    "Increases defense tower maximum health by " +
+                    formattedPercent +
+                    "%.";
+
+
             default:
 
                 return customDescription;
@@ -425,6 +444,12 @@ public class RunUpgradeManager : MonoBehaviour
 
     [SerializeField]
     private int debugHeroHealthStrongStacks;
+
+    [SerializeField]
+    private int debugTowerHealthStacks;
+
+    [SerializeField]
+    private int debugTowerHealthStrongStacks;
 
     [SerializeField]
     private int debugHeroDoubleShotStacks;
@@ -1030,6 +1055,14 @@ public class RunUpgradeManager : MonoBehaviour
                     );
 
 
+            case RunUpgradeType.TowerHealth:
+            case RunUpgradeType.TowerHealthStrong:
+
+                return TryApplyTowerHealthUpgrade(
+                    definition
+                );
+
+
             default:
 
                 Debug.LogError(
@@ -1086,6 +1119,54 @@ public class RunUpgradeManager : MonoBehaviour
 
         return playerHealth
             .TryAddRunMaxHealth(
+                healthToAdd
+            );
+    }
+
+
+    private bool TryApplyTowerHealthUpgrade(
+        RunUpgradeDefinition definition
+    )
+    {
+        ResolveReferences();
+
+        if (combatStats == null)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: CombatStats was not found.",
+                this
+            );
+
+            return false;
+        }
+
+        int permanentMaxHealth =
+            combatStats.DefenseTowerMaxHealth -
+            combatStats.DefenseTowerRunMaxHealthBonus;
+
+        if (permanentMaxHealth <= 0)
+        {
+            Debug.LogError(
+                "RunUpgradeManager: Defense tower permanent max health " +
+                "must be greater than zero.",
+                this
+            );
+
+            return false;
+        }
+
+        int healthToAdd =
+            Mathf.Max(
+                1,
+                Mathf.RoundToInt(
+                    permanentMaxHealth *
+                    definition.BonusPercent /
+                    100f
+                )
+            );
+
+        return combatStats
+            .TryAddDefenseTowerRunMaxHealthBonus(
                 healthToAdd
             );
     }
@@ -1372,6 +1453,16 @@ public class RunUpgradeManager : MonoBehaviour
         debugHeroHealthStrongStacks =
             GetStackCount(
                 RunUpgradeType.HeroHealthStrong
+            );
+
+        debugTowerHealthStacks =
+            GetStackCount(
+                RunUpgradeType.TowerHealth
+            );
+
+        debugTowerHealthStrongStacks =
+            GetStackCount(
+                RunUpgradeType.TowerHealthStrong
             );
 
         debugHeroDoubleShotStacks =

@@ -113,19 +113,21 @@ MonoBehaviour:
   preWavePreparationDuration: 20
   firstWaveStartDelay: 2
   baseAvailableDefenseTowerSlots: 1
-  betweenWaveHealthRestorePercent: 25
+  betweenWaveHeroHealthRestorePercent: 20
+  betweenWaveCoreTowerHealthRestorePercent: 15
+  betweenWaveDefenseTowerHealthRestorePercent: 15
   betweenWaveNextWaveDelay: 0.5
   betweenWaveHealthRewardDelay: 2
   betweenWaveRewardSchedule: 010000000200000001000000020000000300000001000000020000000100000002000000030000000100000002000000010000000200000000000000
   waveComposition:
   - waveName: Wave 1
     enemyGroups:
-    - enemyType: 0
-      enemyCount: 5
+    - enemyType: 3
+      enemyCount: 2
       spawnInterval: 1.3
   - waveName: Wave 2
     enemyGroups:
-    - enemyType: 0
+    - enemyType: 3
       enemyCount: 7
       spawnInterval: 1.3
   - waveName: Wave 3
@@ -365,6 +367,16 @@ MonoBehaviour:
       the movement reduction.
     bonusPercent: 0
     maximumStacks: 1
+  - upgradeType: 17
+    displayName: TOWER VITALITY
+    customDescription: 
+    bonusPercent: 7
+    maximumStacks: 3
+  - upgradeType: 18
+    displayName: GREATER TOWER VITALITY
+    customDescription: 
+    bonusPercent: 15
+    maximumStacks: 2
   heroDoubleShot:
     projectileDamageMultiplier: 0.85
     attackIntervalMultiplier: 1.1

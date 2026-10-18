@@ -93,6 +93,51 @@ public class DefenseTowerHealth : MonoBehaviour
         }
     }
 
+    public int RestoreHealthPercent(float healthPercent)
+    {
+        if (!Application.isPlaying ||
+            !isInitialized ||
+            isDestroyed ||
+            healthPercent <= 0f ||
+            float.IsNaN(healthPercent) ||
+            float.IsInfinity(healthPercent))
+        {
+            return 0;
+        }
+
+        int missingHealth = maxHealth - currentHealth;
+        if (missingHealth <= 0)
+        {
+            return 0;
+        }
+
+        double percent = Math.Min(100d, (double)healthPercent);
+        int requestedHealth = (int)Math.Min(
+            (double)int.MaxValue,
+            Math.Ceiling(maxHealth * percent / 100d)
+        );
+
+        int restoredHealth = Math.Min(
+            missingHealth,
+            Math.Max(1, requestedHealth)
+        );
+
+        currentHealth += restoredHealth;
+
+        if (healthBar != null)
+        {
+            healthBar.SetHealth(currentHealth, maxHealth);
+        }
+
+        Debug.Log(
+            $"DefenseTowerHealth: {gameObject.name} restored {restoredHealth} HP. " +
+            $"HP: {currentHealth}/{maxHealth}.",
+            this
+        );
+
+        return restoredHealth;
+    }
+
     private void HandleRunHealthBonusAdded(int amount)
     {
         if (!isInitialized || isDestroyed || amount <= 0)

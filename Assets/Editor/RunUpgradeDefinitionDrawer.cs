@@ -207,6 +207,9 @@ public sealed class RunUpgradeDefinitionDrawer : PropertyDrawer
             case RunUpgradeType.HeroHealth:
             case RunUpgradeType.HeroHealthStrong:
 
+            case RunUpgradeType.TowerHealth:
+            case RunUpgradeType.TowerHealthStrong:
+
                 return true;
 
             default:

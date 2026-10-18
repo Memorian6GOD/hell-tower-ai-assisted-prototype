@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [Serializable]
 public sealed class EnemyBalanceValues
@@ -789,7 +790,10 @@ public class GameBalanceConfig : ScriptableObject
     [SerializeField, Min(1)] private int baseAvailableDefenseTowerSlots = 1;
 
     [Header("Run Flow - Between-Wave Rewards")]
-    [SerializeField, Range(0f, 100f)] private float betweenWaveHealthRestorePercent = 25f;
+    [FormerlySerializedAs("betweenWaveHealthRestorePercent")]
+    [SerializeField, Range(0f, 100f)] private float betweenWaveHeroHealthRestorePercent = 20f;
+    [SerializeField, Range(0f, 100f)] private float betweenWaveCoreTowerHealthRestorePercent = 15f;
+    [SerializeField, Range(0f, 100f)] private float betweenWaveDefenseTowerHealthRestorePercent = 15f;
     [SerializeField, Min(0f)] private float betweenWaveNextWaveDelay = 0.5f;
     [SerializeField, Min(0f)] private float betweenWaveHealthRewardDelay = 2f;
 
@@ -885,8 +889,14 @@ public class GameBalanceConfig : ScriptableObject
     public float FirstWaveStartDelay => Mathf.Max(0f, firstWaveStartDelay);
     public int BaseAvailableDefenseTowerSlots => Mathf.Max(1, baseAvailableDefenseTowerSlots);
 
-    public float BetweenWaveHealthRestorePercent =>
-        Mathf.Clamp(betweenWaveHealthRestorePercent, 0f, 100f);
+    public float BetweenWaveHeroHealthRestorePercent =>
+        Mathf.Clamp(betweenWaveHeroHealthRestorePercent, 0f, 100f);
+
+    public float BetweenWaveCoreTowerHealthRestorePercent =>
+        Mathf.Clamp(betweenWaveCoreTowerHealthRestorePercent, 0f, 100f);
+
+    public float BetweenWaveDefenseTowerHealthRestorePercent =>
+        Mathf.Clamp(betweenWaveDefenseTowerHealthRestorePercent, 0f, 100f);
 
     public float BetweenWaveNextWaveDelay =>
         Mathf.Max(0f, betweenWaveNextWaveDelay);
@@ -1193,10 +1203,14 @@ public class GameBalanceConfig : ScriptableObject
         firstWaveStartDelay = Mathf.Max(0f, firstWaveStartDelay);
         baseAvailableDefenseTowerSlots = Mathf.Max(1, baseAvailableDefenseTowerSlots);
 
-        betweenWaveHealthRestorePercent = Mathf.Clamp(
-            betweenWaveHealthRestorePercent,
-            0f,
-            100f
+        betweenWaveHeroHealthRestorePercent = Mathf.Clamp(
+            betweenWaveHeroHealthRestorePercent, 0f, 100f
+        );
+        betweenWaveCoreTowerHealthRestorePercent = Mathf.Clamp(
+            betweenWaveCoreTowerHealthRestorePercent, 0f, 100f
+        );
+        betweenWaveDefenseTowerHealthRestorePercent = Mathf.Clamp(
+            betweenWaveDefenseTowerHealthRestorePercent, 0f, 100f
         );
         betweenWaveNextWaveDelay = Mathf.Max(0f, betweenWaveNextWaveDelay);
         betweenWaveHealthRewardDelay = Mathf.Max(0f, betweenWaveHealthRewardDelay);
