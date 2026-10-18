@@ -66,7 +66,7 @@ MonoBehaviour:
     attackInterval: 1.4
     attackWindup: 0.8
   siegeEnemy:
-    baseMaxHealth: 100
+    baseMaxHealth: 125
     baseDamage: 50
     moveSpeed: 1.5
     attackInterval: 1.5
@@ -112,7 +112,7 @@ MonoBehaviour:
     bossAttackDelay: 3
   preWavePreparationDuration: 20
   firstWaveStartDelay: 2
-  baseAvailableDefenseTowerSlots: 1
+  baseAvailableDefenseTowerSlots: 2
   betweenWaveHeroHealthRestorePercent: 20
   betweenWaveCoreTowerHealthRestorePercent: 15
   betweenWaveDefenseTowerHealthRestorePercent: 15
@@ -123,12 +123,12 @@ MonoBehaviour:
   - waveName: Wave 1
     enemyGroups:
     - enemyType: 3
-      enemyCount: 2
+      enemyCount: 1
       spawnInterval: 1.3
   - waveName: Wave 2
     enemyGroups:
     - enemyType: 3
-      enemyCount: 7
+      enemyCount: 1
       spawnInterval: 1.3
   - waveName: Wave 3
     enemyGroups:

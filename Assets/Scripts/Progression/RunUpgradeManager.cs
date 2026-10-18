@@ -1040,19 +1040,19 @@ public class RunUpgradeManager : MonoBehaviour
             case RunUpgradeType.TowerDamage:
             case RunUpgradeType.TowerDamageStrong:
 
-                return combatStats
-                    .TryAddTowerRunDamageBonusPercent(
-                        definition.BonusPercent
-                    );
+                return TryApplyIndividualTowerUpgrade(
+                    definition.BonusPercent,
+                    false
+                );
 
 
             case RunUpgradeType.TowerAttackSpeed:
             case RunUpgradeType.TowerAttackSpeedStrong:
 
-                return combatStats
-                    .TryAddTowerRunAttackSpeedBonusPercent(
-                        definition.BonusPercent
-                    );
+                return TryApplyIndividualTowerUpgrade(
+                    definition.BonusPercent,
+                    true
+                );
 
 
             case RunUpgradeType.TowerHealth:
@@ -1124,51 +1124,51 @@ public class RunUpgradeManager : MonoBehaviour
     }
 
 
-    private bool TryApplyTowerHealthUpgrade(
-        RunUpgradeDefinition definition
-    )
+    private bool TryApplyIndividualTowerUpgrade(float bonusPercent, bool attackSpeed)
+    {
+        DefenseTowerHealth[] towers = FindObjectsByType<DefenseTowerHealth>(
+            FindObjectsInactive.Exclude);
+        int upgraded = 0;
+        foreach (DefenseTowerHealth tower in towers)
+        {
+            if (tower == null || tower.IsDestroyed || tower.CurrentHealth <= 0)
+                continue;
+
+            DefenseTowerRunStats stats = tower.GetComponent<DefenseTowerRunStats>();
+            if (stats == null)
+            {
+                Debug.LogError("RunUpgradeManager: Living tower has no DefenseTowerRunStats.", tower);
+                continue;
+            }
+            bool applied = attackSpeed
+                ? stats.TryAddAttackSpeedBonus(bonusPercent)
+                : stats.TryAddDamageBonus(bonusPercent);
+            if (applied) upgraded++;
+        }
+        Debug.Log($"RunUpgradeManager: Individual {(attackSpeed ? "attack speed" : "damage")} upgrade applied to {upgraded} living tower(s).", this);
+        return upgraded > 0;
+    }
+
+    private bool TryApplyTowerHealthUpgrade(RunUpgradeDefinition definition)
     {
         ResolveReferences();
-
-        if (combatStats == null)
-        {
-            Debug.LogError(
-                "RunUpgradeManager: CombatStats was not found.",
-                this
-            );
-
-            return false;
-        }
-
-        int permanentMaxHealth =
-            combatStats.DefenseTowerMaxHealth -
+        if (combatStats == null) return false;
+        int permanentMaxHealth = combatStats.DefenseTowerMaxHealth -
             combatStats.DefenseTowerRunMaxHealthBonus;
+        if (permanentMaxHealth <= 0) return false;
+        int healthToAdd = Mathf.Max(1, Mathf.RoundToInt(
+            permanentMaxHealth * definition.BonusPercent / 100f));
 
-        if (permanentMaxHealth <= 0)
+        DefenseTowerHealth[] towers = FindObjectsByType<DefenseTowerHealth>(
+            FindObjectsInactive.Exclude);
+        int upgraded = 0;
+        foreach (DefenseTowerHealth tower in towers)
         {
-            Debug.LogError(
-                "RunUpgradeManager: Defense tower permanent max health " +
-                "must be greater than zero.",
-                this
-            );
-
-            return false;
+            if (tower != null && tower.TryAddIndividualRunMaxHealth(healthToAdd))
+                upgraded++;
         }
-
-        int healthToAdd =
-            Mathf.Max(
-                1,
-                Mathf.RoundToInt(
-                    permanentMaxHealth *
-                    definition.BonusPercent /
-                    100f
-                )
-            );
-
-        return combatStats
-            .TryAddDefenseTowerRunMaxHealthBonus(
-                healthToAdd
-            );
+        Debug.Log($"RunUpgradeManager: Individual HP upgrade +{healthToAdd} applied to {upgraded} living tower(s).", this);
+        return upgraded > 0;
     }
 
 
@@ -1177,6 +1177,39 @@ public class RunUpgradeManager : MonoBehaviour
     )
     {
         currentOptions.Clear();
+
+        // A destroyed tower cannot receive upgrades. If all towers have
+        // been destroyed, skip this reward instead of offering dead cards.
+        if (category == RunUpgradeCategory.DefenseTower)
+        {
+            DefenseTowerHealth[] towers =
+                FindObjectsByType<DefenseTowerHealth>(
+                    FindObjectsInactive.Exclude
+                );
+
+            bool hasLivingTower = false;
+
+            foreach (DefenseTowerHealth tower in towers)
+            {
+                if (tower != null &&
+                    !tower.IsDestroyed &&
+                    tower.CurrentHealth > 0)
+                {
+                    hasLivingTower = true;
+                    break;
+                }
+            }
+
+            if (!hasLivingTower)
+            {
+                Debug.Log(
+                    "RunUpgradeManager: No living defense towers. " +
+                    "Tower upgrade selection skipped.",
+                    this
+                );
+                return;
+            }
+        }
 
         if (balanceConfig == null)
         {
@@ -1300,20 +1333,86 @@ public class RunUpgradeManager : MonoBehaviour
             );
 
 
-        for (
-            int i = 0;
-            i < optionsToOffer;
-            i++
-        )
+        // Select options from the shuffled pool without offering
+        // normal and strong variants of the same stat together.
+        // Both variants remain available on subsequent selections.
+        foreach (RunUpgradeDefinition candidate in availableOptions)
         {
-            currentOptions.Add(
-                availableOptions[i]
-            );
+            if (currentOptions.Count >= optionsToOffer)
+            {
+                break;
+            }
+
+            int candidateGroup =
+                GetExclusiveOfferGroup(candidate.UpgradeType);
+
+            bool conflictsWithCurrentOffer = false;
+
+            if (candidateGroup != 0)
+            {
+                foreach (RunUpgradeDefinition selected in currentOptions)
+                {
+                    if (GetExclusiveOfferGroup(selected.UpgradeType) ==
+                        candidateGroup)
+                    {
+                        conflictsWithCurrentOffer = true;
+                        break;
+                    }
+                }
+            }
+
+            if (conflictsWithCurrentOffer)
+            {
+                continue;
+            }
+
+            currentOptions.Add(candidate);
         }
 
 
         debugAvailableUpgradeCount =
             availableOptions.Count;
+    }
+
+
+    // Zero means the upgrade has no mutually exclusive
+    // variant in the same selection window.
+    // These group IDs affect offers only, never stack limits.
+    private static int GetExclusiveOfferGroup(RunUpgradeType type)
+    {
+        switch (type)
+        {
+            case RunUpgradeType.HeroDamage:
+            case RunUpgradeType.HeroDamageStrong:
+                return 1;
+
+            case RunUpgradeType.HeroAttackSpeed:
+            case RunUpgradeType.HeroAttackSpeedStrong:
+                return 2;
+
+            case RunUpgradeType.HeroCrit:
+            case RunUpgradeType.HeroCritStrong:
+                return 3;
+
+            case RunUpgradeType.HeroHealth:
+            case RunUpgradeType.HeroHealthStrong:
+                return 4;
+
+            case RunUpgradeType.TowerDamage:
+            case RunUpgradeType.TowerDamageStrong:
+                return 5;
+
+            case RunUpgradeType.TowerAttackSpeed:
+            case RunUpgradeType.TowerAttackSpeedStrong:
+                return 6;
+
+            case RunUpgradeType.TowerHealth:
+            case RunUpgradeType.TowerHealthStrong:
+                return 7;
+
+            default:
+                return 0;
+        }
     }
 
 

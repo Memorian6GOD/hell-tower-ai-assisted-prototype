@@ -15,6 +15,9 @@ public class BetweenWaveRewardManager : MonoBehaviour
     [SerializeField]
     private RunUpgradeSelectionUI runUpgradeSelectionUI;
 
+    [Header("Restoration Reference")]
+    [SerializeField] private DefenseTowerRestorationManager restorationManager;
+
     [Header("Health References")]
     [SerializeField]
     private PlayerHealth playerHealth;
@@ -34,12 +37,6 @@ public class BetweenWaveRewardManager : MonoBehaviour
 
     [SerializeField]
     private int lastCoreTowerHealthRestored;
-
-    [SerializeField]
-    private int lastDefenseTowerHealthRestored;
-
-    [SerializeField]
-    private int lastDefenseTowersHealed;
 
     [SerializeField]
     private BetweenWaveRewardType lastResolvedRewardType;
@@ -127,11 +124,18 @@ public class BetweenWaveRewardManager : MonoBehaviour
                     completedWave
                 );
 
-                BeginNextWaveAfterDelay(
-                    balanceConfig
-                        .BetweenWaveHealthRewardDelay
-                );
+                // The health reward still happens first. Then the player
+                // decides whether to use the one-time restoration token.
+                if (completedWave == 10 && restorationManager != null &&
+                    restorationManager.TryBeginWaveTenDecision(HandleRestorationDecisionFinished))
+                {
+                    Debug.Log("BetweenWaveRewardManager: Waiting for wave-10 restoration decision.", this);
+                    return;
+                }
 
+                BeginNextWaveAfterDelay(
+                    balanceConfig.BetweenWaveHealthRewardDelay
+                );
                 return;
 
             case BetweenWaveRewardType.HeroUpgrade:
@@ -160,6 +164,13 @@ public class BetweenWaveRewardManager : MonoBehaviour
         BeginNextWaveAfterDelay(
             balanceConfig.BetweenWaveNextWaveDelay
         );
+    }
+
+    private void HandleRestorationDecisionFinished()
+    {
+        if (!isResolvingReward || balanceConfig == null) return;
+        Debug.Log("BetweenWaveRewardManager: Restoration decision resolved; continuing.", this);
+        BeginNextWaveAfterDelay(balanceConfig.BetweenWaveNextWaveDelay);
     }
 
     private bool TryOpenUpgradeSelection(
@@ -215,67 +226,29 @@ public class BetweenWaveRewardManager : MonoBehaviour
         );
     }
 
-    private void RestoreHealthReward(
-        int completedWave
-    )
+    private void RestoreHealthReward(int completedWave)
     {
-        if (balanceConfig == null)
+        if (balanceConfig == null) return;
+        float heroPercent = balanceConfig.BetweenWaveHeroHealthRestorePercent;
+        float corePercent = balanceConfig.BetweenWaveCoreTowerHealthRestorePercent;
+        float towerPercent = balanceConfig.BetweenWaveDefenseTowerHealthRestorePercent;
+        lastHeroHealthRestored = playerHealth != null ? playerHealth.RestoreHealthPercent(heroPercent) : 0;
+        lastCoreTowerHealthRestored = coreTowerHealth != null ? coreTowerHealth.RestoreHealthPercent(corePercent) : 0;
+        int totalTowerHpRestored = 0;
+        int towersHealed = 0;
+        foreach (DefenseTowerHealth tower in FindObjectsByType<DefenseTowerHealth>(FindObjectsInactive.Exclude))
         {
-            return;
-        }
-
-        float heroPercent =
-            balanceConfig.BetweenWaveHeroHealthRestorePercent;
-        float corePercent =
-            balanceConfig.BetweenWaveCoreTowerHealthRestorePercent;
-        float towerPercent =
-            balanceConfig.BetweenWaveDefenseTowerHealthRestorePercent;
-
-        lastHeroHealthRestored =
-            playerHealth != null
-                ? playerHealth.RestoreHealthPercent(heroPercent)
-                : 0;
-
-        lastCoreTowerHealthRestored =
-            coreTowerHealth != null
-                ? coreTowerHealth.RestoreHealthPercent(corePercent)
-                : 0;
-
-        lastDefenseTowerHealthRestored = 0;
-        lastDefenseTowersHealed = 0;
-
-        DefenseTowerHealth[] towers =
-            FindObjectsByType<DefenseTowerHealth>(
-                FindObjectsInactive.Exclude
-            );
-
-        foreach (DefenseTowerHealth tower in towers)
-        {
-            if (tower == null || tower.IsDestroyed)
-            {
-                continue;
-            }
-
+            if (tower == null || tower.IsDestroyed) continue;
             int restored = tower.RestoreHealthPercent(towerPercent);
-            if (restored <= 0)
-            {
-                continue;
-            }
-
-            lastDefenseTowerHealthRestored += restored;
-            lastDefenseTowersHealed++;
+            if (restored <= 0) continue;
+            totalTowerHpRestored += restored;
+            towersHealed++;
         }
-
-        Debug.Log(
-            "BetweenWaveRewardManager: Wave " +
-            $"{completedWave} health reward resolved. " +
-            $"Hero ({heroPercent:F1}%) restored {lastHeroHealthRestored} HP. " +
-            $"CoreTower ({corePercent:F1}%) restored {lastCoreTowerHealthRestored} HP. " +
-            $"Defense towers ({towerPercent:F1}%): " +
-            $"{lastDefenseTowersHealed} healed, " +
-            $"{lastDefenseTowerHealthRestored} total HP restored.",
-            this
-        );
+        Debug.Log($"BetweenWaveRewardManager: Wave {completedWave} health reward resolved. " +
+                  $"Hero ({heroPercent:F1}%) restored {lastHeroHealthRestored} HP. " +
+                  $"CoreTower ({corePercent:F1}%) restored {lastCoreTowerHealthRestored} HP. " +
+                  $"Defense towers ({towerPercent:F1}%): {towersHealed} healed, " +
+                  $"{totalTowerHpRestored} total HP restored.", this);
     }
 
     private void BeginNextWaveAfterDelay(
@@ -359,6 +332,11 @@ public class BetweenWaveRewardManager : MonoBehaviour
         {
             coreTowerHealth =
                 FindAnyObjectByType<CoreTowerHealth>();
+        }
+
+        if (restorationManager == null)
+        {
+            restorationManager = FindAnyObjectByType<DefenseTowerRestorationManager>();
         }
     }
 

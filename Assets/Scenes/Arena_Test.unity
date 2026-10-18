@@ -2838,6 +2838,7 @@ GameObject:
   - component: {fileID: 1295724595}
   - component: {fileID: 1295724596}
   - component: {fileID: 1295724597}
+  - component: {fileID: 1295724598}
   m_Layer: 0
   m_Name: GameProgression
   m_TagString: Untagged
@@ -2925,9 +2926,9 @@ MonoBehaviour:
   playerHealth: {fileID: 2079961573}
   playerAttack: {fileID: 0}
   balanceConfig: {fileID: 11400000, guid: a933a1fe0903ce747bfec44d39f47fbc, type: 2}
-  useDebugTestPool: 1
-  debugTestCategory: 1
-  debugTestUpgradeTypes: 12000000
+  useDebugTestPool: 0
+  debugTestCategory: 0
+  debugTestUpgradeTypes: 000000000400000001000000
   selectionInProgress: 0
   debugCurrentCategory: 0
   debugHeroDamageStacks: 0
@@ -2974,6 +2975,25 @@ MonoBehaviour:
   lastDefenseTowerHealthRestored: 0
   lastDefenseTowersHealed: 0
   lastResolvedRewardType: 0
+--- !u!114 &1295724598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1295724592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f49044c811cda8d41bc15f9f7e8a3816, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DefenseTowerRestorationManager
+  waveManager: {fileID: 329377295}
+  testHeroHasUnlockedRestoration: 1
+  unlockAfterCompletedWave: 10
+  showRestorationPanel: 1
+  restorationTokenEarned: 0
+  restorationTokenUsed: 0
+  lastCompletedWave: 0
 --- !u!1 &1323950012
 GameObject:
   m_ObjectHideFlags: 0
