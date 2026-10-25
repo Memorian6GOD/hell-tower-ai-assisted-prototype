@@ -12,7 +12,12 @@ public class PlayerProgression : MonoBehaviour
     [SerializeField]
     private GameBalanceConfig balanceConfig;
 
+    [Header("Save Profile")]
+    [SerializeField]
+    private PlayerSaveProfile saveProfile = PlayerSaveProfile.Main;
+
     [Header("Debug - Do Not Edit")]
+    [SerializeField] private string debugActiveSaveProfile;
     [SerializeField] private string debugSaveFilePath;
     [SerializeField] private int debugGold;
     [SerializeField] private int debugHeroLevel;
@@ -44,6 +49,7 @@ public class PlayerProgression : MonoBehaviour
     [SerializeField] private bool debugMapOneRewardClaimed;
 
     private PlayerProgressData progress;
+    private PlayerSaveProfile activeSaveProfile;
 
     public event Action ProgressChanged;
 
@@ -126,7 +132,10 @@ public class PlayerProgression : MonoBehaviour
 
     private void Awake()
     {
-        progress = PlayerProgressSaveSystem.Load();
+        // Keep the selected profile fixed for this play session.
+        // Editing the Inspector field during Play Mode must not redirect saves.
+        activeSaveProfile = saveProfile;
+        progress = PlayerProgressSaveSystem.Load(activeSaveProfile);
 
         RefreshDebugInfo();
 
@@ -147,9 +156,9 @@ public class PlayerProgression : MonoBehaviour
         }
 
         Debug.Log(
-            $"PlayerProgression: Progress loaded. " +
+            $"PlayerProgression: {activeSaveProfile} progress loaded. " +
             $"Gold = {Gold}, Hero level = {HeroLevel}. " +
-            $"Save file: {PlayerProgressSaveSystem.SaveFilePath}",
+            $"Save file: {PlayerProgressSaveSystem.GetSaveFilePath(activeSaveProfile)}",
             this
         );
     }
@@ -836,7 +845,7 @@ public class PlayerProgression : MonoBehaviour
     private bool SaveAfterChange(string successMessage)
     {
         bool saveSucceeded =
-            PlayerProgressSaveSystem.Save(progress);
+            PlayerProgressSaveSystem.Save(progress, activeSaveProfile);
 
         RefreshDebugInfo();
 
@@ -863,8 +872,9 @@ public class PlayerProgression : MonoBehaviour
 
     private void RefreshDebugInfo()
     {
+        debugActiveSaveProfile = activeSaveProfile.ToString();
         debugSaveFilePath =
-            PlayerProgressSaveSystem.SaveFilePath;
+            PlayerProgressSaveSystem.GetSaveFilePath(activeSaveProfile);
 
         if (progress == null)
         {
@@ -1344,17 +1354,22 @@ public class PlayerProgression : MonoBehaviour
     }
 
     [ContextMenu(
-        "Test Progress/Reset Save To Defaults"
+        "Test Progress/Reset Balance Test Profile To Defaults"
     )]
-    private void TestResetSaveToDefaults()
+    private void TestResetBalanceTestProfileToDefaults()
     {
         if (!Application.isPlaying)
         {
             return;
         }
 
-        if (!PlayerProgressSaveSystem.DeleteSaveFile())
+        if (activeSaveProfile != PlayerSaveProfile.BalanceTest)
         {
+            Debug.LogWarning(
+                "PlayerProgression: Reset blocked. " +
+                "Only the BalanceTest profile can be reset here.",
+                this
+            );
             return;
         }
 
@@ -1362,7 +1377,7 @@ public class PlayerProgression : MonoBehaviour
         progress.Validate();
 
         SaveAfterChange(
-            "Save reset to default progress."
+            "Balance test profile reset to default progress."
         );
     }
 }

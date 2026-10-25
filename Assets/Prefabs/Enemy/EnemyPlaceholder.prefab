@@ -469,7 +469,6 @@ MonoBehaviour:
   stopGap: 0.15
   arrivalTolerance: 0.25
   resumeExtraDistance: 0.45
-  aggroConfirmationTime: 0.3
   slotArrivalDistance: 0.2
   repathInterval: 0.1
   navMeshSampleDistance: 2

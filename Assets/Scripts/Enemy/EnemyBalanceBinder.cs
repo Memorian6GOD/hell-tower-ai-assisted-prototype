@@ -27,6 +27,64 @@ public class EnemyBalanceBinder : MonoBehaviour
     public EnemyBalanceType EnemyType =>
         enemyType;
 
+    // Called by WaveManager immediately after Instantiate, before Start.
+    // Uses this enemy's own base balance, so map settings never replace
+    // or modify the shared GameBalanceConfig asset.
+    public bool TryApplyMapMoveSpeedMultiplier(float multiplier)
+    {
+        if (balanceConfig == null ||
+            multiplier <= 0f ||
+            float.IsNaN(multiplier) ||
+            float.IsInfinity(multiplier))
+        {
+            return false;
+        }
+
+        EnemyBalanceValues balance = GetBalanceValues();
+
+        if (balance == null)
+        {
+            return false;
+        }
+
+        float targetSpeed = balance.MoveSpeed * multiplier;
+
+        if (targetSpeed <= 0f ||
+            float.IsNaN(targetSpeed) ||
+            float.IsInfinity(targetSpeed))
+        {
+            return false;
+        }
+
+        switch (enemyType)
+        {
+            case EnemyBalanceType.Melee:
+            case EnemyBalanceType.Strong:
+                EnemyMovement meleeMovement =
+                    GetComponent<EnemyMovement>();
+
+                return meleeMovement != null &&
+                    meleeMovement.ConfigureMoveSpeed(targetSpeed);
+
+            case EnemyBalanceType.Ranged:
+                RangedEnemyMovement rangedMovement =
+                    GetComponent<RangedEnemyMovement>();
+
+                return rangedMovement != null &&
+                    rangedMovement.ConfigureMoveSpeed(targetSpeed);
+
+            case EnemyBalanceType.Siege:
+                SiegeEnemyMovement siegeMovement =
+                    GetComponent<SiegeEnemyMovement>();
+
+                return siegeMovement != null &&
+                    siegeMovement.ConfigureMoveSpeed(targetSpeed);
+
+            default:
+                return false;
+        }
+    }
+
 
     private void Awake()
     {

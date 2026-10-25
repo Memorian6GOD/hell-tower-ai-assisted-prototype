@@ -2,16 +2,52 @@ using System;
 using System.IO;
 using UnityEngine;
 
+public enum PlayerSaveProfile
+{
+    Main,
+    BalanceTest
+}
+
 public static class PlayerProgressSaveSystem
 {
-    private const string SaveFileName = "hell_tower_progress.json";
+    private const string MainSaveFileName = "hell_tower_progress.json";
+    private const string BalanceTestSaveFileName =
+        "hell_tower_progress_balance_test.json";
 
     public static string SaveFilePath =>
-        Path.Combine(Application.persistentDataPath, SaveFileName);
+        GetSaveFilePath(PlayerSaveProfile.Main);
+
+    public static string GetSaveFilePath(PlayerSaveProfile profile)
+    {
+        string fileName;
+
+        switch (profile)
+        {
+            case PlayerSaveProfile.Main:
+                fileName = MainSaveFileName;
+                break;
+
+            case PlayerSaveProfile.BalanceTest:
+                fileName = BalanceTestSaveFileName;
+                break;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(profile));
+        }
+
+        return Path.Combine(Application.persistentDataPath, fileName);
+    }
 
     public static PlayerProgressData Load()
     {
-        if (!File.Exists(SaveFilePath))
+        return Load(PlayerSaveProfile.Main);
+    }
+
+    public static PlayerProgressData Load(PlayerSaveProfile profile)
+    {
+        string filePath = GetSaveFilePath(profile);
+
+        if (!File.Exists(filePath))
         {
             PlayerProgressData newProgress = new();
             newProgress.Validate();
@@ -20,7 +56,7 @@ public static class PlayerProgressSaveSystem
 
         try
         {
-            string json = File.ReadAllText(SaveFilePath);
+            string json = File.ReadAllText(filePath);
 
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -43,7 +79,7 @@ public static class PlayerProgressSaveSystem
         catch (Exception exception)
         {
             Debug.LogError(
-                "PlayerProgressSaveSystem: Could not load progress. " +
+                $"PlayerProgressSaveSystem: Could not load {profile} progress. " +
                 $"A new default progress object will be used. {exception.Message}"
             );
 
@@ -54,6 +90,14 @@ public static class PlayerProgressSaveSystem
     }
 
     public static bool Save(PlayerProgressData progress)
+    {
+        return Save(progress, PlayerSaveProfile.Main);
+    }
+
+    public static bool Save(
+        PlayerProgressData progress,
+        PlayerSaveProfile profile
+    )
     {
         if (progress == null)
         {
@@ -72,13 +116,13 @@ public static class PlayerProgressSaveSystem
             );
 
             string json = JsonUtility.ToJson(progress, true);
-            File.WriteAllText(SaveFilePath, json);
+            File.WriteAllText(GetSaveFilePath(profile), json);
             return true;
         }
         catch (Exception exception)
         {
             Debug.LogError(
-                "PlayerProgressSaveSystem: Could not save progress. " +
+                $"PlayerProgressSaveSystem: Could not save {profile} progress. " +
                 exception.Message
             );
             return false;

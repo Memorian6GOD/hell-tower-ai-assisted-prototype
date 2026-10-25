@@ -19,6 +19,11 @@ public class WaveManager : MonoBehaviour
     [SerializeField]
     private GameBalanceConfig balanceConfig;
 
+    [Header("Map Balance Override - Optional")]
+
+    [SerializeField]
+    private MapBalanceConfig mapBalanceConfig;
+
 
     [Header("Enemy Prefab Registry - Technical")]
 
@@ -48,9 +53,11 @@ public class WaveManager : MonoBehaviour
     }
 
     public int TotalWaves =>
-        balanceConfig != null
-            ? balanceConfig.WaveCompositionCount
-            : 0;
+        mapBalanceConfig != null
+            ? mapBalanceConfig.WaveCompositionCount
+            : balanceConfig != null
+                ? balanceConfig.WaveCompositionCount
+                : 0;
 
     public bool IsWaveActive
     {
@@ -205,12 +212,12 @@ public class WaveManager : MonoBehaviour
             CurrentWave + 1;
 
         WaveCompositionValues waveToStart =
-            balanceConfig.GetWaveComposition(
+            GetWaveComposition(
                 nextWave
             );
 
         WaveBalanceValues waveBalance =
-            balanceConfig.GetWaveBalance(
+            GetWaveBalance(
                 nextWave
             );
 
@@ -257,12 +264,81 @@ public class WaveManager : MonoBehaviour
         Debug.Log(
             $"WaveManager: Wave {CurrentWave} " +
             $"of {TotalWaves} started. " +
+            $"Balance: {(mapBalanceConfig != null ? mapBalanceConfig.MapName : "Master")}. " +
             $"Name: {waveToStart.WaveName}. " +
             $"Health x{activeHealthMultiplier}, " +
-            $"Damage x{activeDamageMultiplier}."
+            $"Damage x{activeDamageMultiplier}, " +
+            $"Move speed x{GetEnemyMoveSpeedMultiplier()}."
         );
 
         return true;
+    }
+
+    private WaveCompositionValues GetWaveComposition(int waveNumber)
+    {
+        if (mapBalanceConfig != null)
+        {
+            return mapBalanceConfig.GetWaveComposition(waveNumber);
+        }
+
+        return balanceConfig != null
+            ? balanceConfig.GetWaveComposition(waveNumber)
+            : null;
+    }
+
+    private WaveBalanceValues GetWaveBalance(int waveNumber)
+    {
+        if (mapBalanceConfig != null)
+        {
+            return mapBalanceConfig.GetWaveBalance(waveNumber);
+        }
+
+        return balanceConfig != null
+            ? balanceConfig.GetWaveBalance(waveNumber)
+            : null;
+    }
+
+    private int GetWaveBalanceCount()
+    {
+        return mapBalanceConfig != null
+            ? mapBalanceConfig.WaveBalanceCount
+            : balanceConfig != null
+                ? balanceConfig.WaveBalanceCount
+                : 0;
+    }
+
+    private float GetEnemyMoveSpeedMultiplier()
+    {
+        return mapBalanceConfig != null
+            ? mapBalanceConfig.EnemyMoveSpeedMultiplier
+            : 1f;
+    }
+
+    [ContextMenu("Setup/Copy Master Waves To Map (If Empty)")]
+    private void CopyMasterWavesToMapIfEmpty()
+    {
+        if (Application.isPlaying)
+        {
+            Debug.LogWarning(
+                "WaveManager: Copy map waves only in Edit Mode.",
+                this
+            );
+
+            return;
+        }
+
+        if (balanceConfig == null || mapBalanceConfig == null)
+        {
+            Debug.LogWarning(
+                "WaveManager: Assign both the master GameBalanceConfig " +
+                "and the MapBalanceConfig before copying waves.",
+                this
+            );
+
+            return;
+        }
+
+        mapBalanceConfig.TryCopyWavesFromMasterIfEmpty(balanceConfig);
     }
 
 
@@ -293,14 +369,14 @@ public class WaveManager : MonoBehaviour
         if (TotalWaves <= 0)
         {
             Debug.LogWarning(
-                "WaveManager: GameBalanceConfig does not " +
+                "WaveManager: Selected balance config does not " +
                 "contain wave composition data."
             );
 
             return false;
         }
 
-        if (balanceConfig.WaveBalanceCount <
+        if (GetWaveBalanceCount() <
             TotalWaves)
         {
             Debug.LogWarning(
@@ -344,7 +420,7 @@ public class WaveManager : MonoBehaviour
             CurrentWave + 1;
 
         WaveCompositionValues nextWave =
-            balanceConfig.GetWaveComposition(
+            GetWaveComposition(
                 nextWaveNumber
             );
 
@@ -370,7 +446,7 @@ public class WaveManager : MonoBehaviour
         }
 
         WaveBalanceValues nextWaveBalance =
-            balanceConfig.GetWaveBalance(
+            GetWaveBalance(
                 nextWaveNumber
             );
 
@@ -656,12 +732,34 @@ public class WaveManager : MonoBehaviour
             );
         }
 
+        // EnemyBalanceBinder.Awake has already applied base movement.
+        // EnemyMovement.Start has not run yet, so this map override
+        // safely becomes the agent's movement speed for the wave.
+        float moveSpeedMultiplier = GetEnemyMoveSpeedMultiplier();
+
+        if (!Mathf.Approximately(moveSpeedMultiplier, 1f))
+        {
+            EnemyBalanceBinder binder =
+                spawnedEnemy.GetComponent<EnemyBalanceBinder>();
+
+            if (binder == null ||
+                !binder.TryApplyMapMoveSpeedMultiplier(moveSpeedMultiplier))
+            {
+                Debug.LogWarning(
+                    $"WaveManager: Could not apply map movement x" +
+                    $"{moveSpeedMultiplier} to {spawnedEnemy.name}.",
+                    spawnedEnemy
+                );
+            }
+        }
+
 
         Debug.Log(
             $"WaveManager: Applied modifiers to " +
             $"{spawnedEnemy.name}. Health x" +
             $"{activeHealthMultiplier}, Damage x" +
-            $"{activeDamageMultiplier}."
+            $"{activeDamageMultiplier}, Move speed x" +
+            $"{moveSpeedMultiplier}."
         );
     }
 

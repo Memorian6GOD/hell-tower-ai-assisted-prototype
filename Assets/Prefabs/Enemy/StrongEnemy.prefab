@@ -28,6 +28,10 @@ PrefabInstance:
       propertyPath: attackInterval
       value: 1.4
       objectReference: {fileID: 0}
+    - target: {fileID: 2085246450716908714, guid: c48758b536b22624d9901c2397938ed0, type: 3}
+      propertyPath: enemyType
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5129780838239145791, guid: c48758b536b22624d9901c2397938ed0, type: 3}
       propertyPath: moveSpeed
       value: 1.5

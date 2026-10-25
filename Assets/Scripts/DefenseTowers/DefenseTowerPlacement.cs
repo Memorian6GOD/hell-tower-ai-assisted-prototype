@@ -9,67 +9,44 @@ public class DefenseTowerPlacement : MonoBehaviour
     [SerializeField] private Camera placementCamera;
     [SerializeField] private Transform coreTower;
     [SerializeField] private GameObject towerPrefab;
-
-    [SerializeField]
-    private DefenseTowerPlacementPreview
-        previewPrefab;
-
-    [SerializeField]
-    private Transform placedTowersParent;
+    [SerializeField] private DefenseTowerPlacementPreview previewPrefab;
+    [SerializeField] private Transform placedTowersParent;
 
     [Header("Build Zone Settings")]
     [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private Collider buildGroundCollider;
     [SerializeField] private float minimumBuildRadius = 5f;
     [SerializeField] private float maximumBuildRadius = 10f;
 
     [Header("Grid Settings")]
     [SerializeField] private float gridCellSize = 1f;
     [SerializeField] private int towerFootprintCells = 3;
-
-    [SerializeField]
-    private int emptyCellsBetweenTowers = 2;
+    [SerializeField] private int emptyCellsBetweenTowers = 2;
 
     [Header("Debug - Do Not Edit")]
     [SerializeField] private bool isPlacementUnlocked;
     [SerializeField] private bool isPlacementActive;
     [SerializeField] private bool pointerIsOnGround;
-
-    [SerializeField]
-    private bool currentPositionInsideBuildZone;
-
-    [SerializeField]
-    private bool currentPositionClearOfTowers;
-
-    [SerializeField]
-    private bool currentPositionAllowed;
-
-    [SerializeField]
-    private Vector3 currentSnappedPosition;
-
+    [SerializeField] private bool currentPositionInsideBuildZone;
+    [SerializeField] private bool currentPositionClearOfTowers;
+    [SerializeField] private bool currentPositionAllowed;
+    [SerializeField] private Vector3 currentSnappedPosition;
     [SerializeField] private int maximumTowerCount;
     [SerializeField] private int placedTowerCount;
 
-    private readonly List<GameObject> placedTowers =
-        new List<GameObject>();
+    // First tap selects a cell; only the second tap on that cell builds.
+    [SerializeField] private bool waitingForSecondTap;
 
-    private DefenseTowerPlacementPreview
-        previewInstance;
-
+    private readonly List<GameObject> placedTowers = new List<GameObject>();
+    private DefenseTowerPlacementPreview previewInstance;
     private bool allTowerSlotsUsedReported;
 
     public event Action AllTowerSlotsUsed;
 
-    public bool IsPlacementUnlocked =>
-        isPlacementUnlocked;
-
-    public bool IsPlacementActive =>
-        isPlacementActive;
-
-    public int MaximumTowerCount =>
-        maximumTowerCount;
-
-    public int PlacedTowerCount =>
-        placedTowerCount;
+    public bool IsPlacementUnlocked => isPlacementUnlocked;
+    public bool IsPlacementActive => isPlacementActive;
+    public int MaximumTowerCount => maximumTowerCount;
+    public int PlacedTowerCount => placedTowerCount;
 
     private void Awake()
     {
@@ -89,59 +66,97 @@ public class DefenseTowerPlacement : MonoBehaviour
             return;
         }
 
+        // Keep existing desktop cancellation shortcuts.
+        if ((Mouse.current != null &&
+             Mouse.current.rightButton.wasPressedThisFrame) ||
+            (Keyboard.current != null &&
+             Keyboard.current.escapeKey.wasPressedThisFrame))
+        {
+            CancelPlacement();
+            return;
+        }
+
         Pointer currentPointer = Pointer.current;
 
         if (currentPointer == null)
         {
-            ResetCurrentPositionState();
-            HidePreview();
+            if (!waitingForSecondTap)
+            {
+                ResetCurrentPositionState();
+                HidePreview();
+            }
+
             return;
         }
 
-        Vector2 screenPosition =
-            currentPointer.position.ReadValue();
-
-        UpdatePointerPosition(
-            screenPosition
-        );
+        Vector2 screenPosition = currentPointer.position.ReadValue();
 
         if (currentPointer.press.wasPressedThisFrame)
         {
-            TryPlaceTower();
+            HandlePlacementPress(screenPosition);
+            return;
         }
 
-        if (Mouse.current != null &&
-            Mouse.current.rightButton
-                .wasPressedThisFrame)
+        // Mouse has a cursor, so show a normal hover preview until
+        // the first click locks a cell. Touchscreens have no hover.
+        if (!waitingForSecondTap && currentPointer is Mouse)
         {
-            CancelPlacement();
-        }
-
-        if (Keyboard.current != null &&
-            Keyboard.current.escapeKey
-                .wasPressedThisFrame)
-        {
-            CancelPlacement();
+            UpdatePointerPosition(screenPosition);
         }
     }
 
-    public void OpenPlacement(
-        int availableTowerSlots
-    )
+    private void HandlePlacementPress(Vector2 screenPosition)
+    {
+        bool hadPendingSelection = waitingForSecondTap;
+        Vector3 previouslySelectedPosition = currentSnappedPosition;
+
+        // Inspect the location of THIS tap; the old preview position
+        // must not accidentally be used when the finger moves.
+        UpdatePointerPosition(screenPosition);
+
+        if (!pointerIsOnGround || !currentPositionAllowed)
+        {
+            // Keep the red preview if we hit ground in a blocked area.
+            // A blocked tap can never confirm a tower.
+            waitingForSecondTap = false;
+            return;
+        }
+
+        if (hadPendingSelection &&
+            IsSameGridCell(previouslySelectedPosition, currentSnappedPosition))
+        {
+            waitingForSecondTap = false;
+            TryPlaceTower();
+            return;
+        }
+
+        // First tap, or a tap on a different cell: select only.
+        waitingForSecondTap = true;
+
+        Debug.Log(
+            "DefenseTowerPlacement: Selected cell " +
+            currentSnappedPosition +
+            ". Tap the same cell again to build."
+        );
+    }
+
+    private bool IsSameGridCell(Vector3 first, Vector3 second)
+    {
+        float tolerance = gridCellSize * 0.25f;
+
+        return Mathf.Abs(first.x - second.x) < tolerance &&
+               Mathf.Abs(first.z - second.z) < tolerance;
+    }
+
+    public void OpenPlacement(int availableTowerSlots)
     {
         CleanupDestroyedTowers();
 
-        maximumTowerCount =
-            Mathf.Max(
-                0,
-                availableTowerSlots
-            );
-
+        maximumTowerCount = Mathf.Max(0, availableTowerSlots);
         isPlacementUnlocked = true;
         allTowerSlotsUsedReported = false;
 
-        if (placedTowerCount >=
-            maximumTowerCount)
+        if (placedTowerCount >= maximumTowerCount)
         {
             ReportAllTowerSlotsUsed();
             return;
@@ -158,10 +173,7 @@ public class DefenseTowerPlacement : MonoBehaviour
         ResetCurrentPositionState();
         DestroyPreview();
 
-        Debug.Log(
-            "DefenseTowerPlacement: " +
-            "Building is locked."
-        );
+        Debug.Log("DefenseTowerPlacement: Building is locked.");
     }
 
     [ContextMenu("Begin Tower Placement")]
@@ -172,10 +184,8 @@ public class DefenseTowerPlacement : MonoBehaviour
         if (!isPlacementUnlocked)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "Building is currently locked."
+                "DefenseTowerPlacement: Building is currently locked."
             );
-
             return;
         }
 
@@ -192,58 +202,54 @@ public class DefenseTowerPlacement : MonoBehaviour
         if (placementCamera == null)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "Placement Camera is not assigned."
+                "DefenseTowerPlacement: Placement Camera is not assigned."
             );
-
             return;
         }
 
         if (coreTower == null)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "Core Tower is not assigned."
+                "DefenseTowerPlacement: Core Tower is not assigned."
             );
-
             return;
         }
 
         if (towerPrefab == null)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "Tower Prefab is not assigned."
+                "DefenseTowerPlacement: Tower Prefab is not assigned."
             );
-
             return;
         }
 
         if (previewPrefab == null)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "Preview Prefab is not assigned."
+                "DefenseTowerPlacement: Preview Prefab is not assigned."
             );
-
             return;
         }
 
-        if (placedTowerCount >=
-            maximumTowerCount)
+        if (placedTowerCount >= maximumTowerCount)
         {
             ReportAllTowerSlotsUsed();
             return;
         }
 
-        CreatePreview();
+        if (buildGroundCollider == null)
+        {
+            Debug.LogWarning(
+                "DefenseTowerPlacement: Build Ground Collider is not assigned. " +
+                "Tower footprint cannot be checked against the map edges."
+            );
+        }
 
+        ResetCurrentPositionState();
+        CreatePreview();
         isPlacementActive = true;
 
-        Debug.Log(
-            "DefenseTowerPlacement: " +
-            "Tower placement started."
-        );
+        Debug.Log("DefenseTowerPlacement: Tower placement started.");
     }
 
     public void CancelPlacement()
@@ -253,52 +259,39 @@ public class DefenseTowerPlacement : MonoBehaviour
         ResetCurrentPositionState();
         DestroyPreview();
 
-        Debug.Log(
-            "DefenseTowerPlacement: " +
-            "Placement cancelled."
-        );
+        Debug.Log("DefenseTowerPlacement: Placement cancelled.");
     }
 
     private void CreatePreview()
     {
         DestroyPreview();
 
-        previewInstance =
-            Instantiate(
-                previewPrefab,
-                Vector3.zero,
-                Quaternion.identity
-            );
-
-        previewInstance.gameObject.SetActive(
-            false
+        previewInstance = Instantiate(
+            previewPrefab,
+            Vector3.zero,
+            Quaternion.identity
         );
+
+        previewInstance.gameObject.SetActive(false);
     }
 
-    private void UpdatePointerPosition(
-        Vector2 screenPosition
-    )
+    private void UpdatePointerPosition(Vector2 screenPosition)
     {
-        Vector3 screenPoint =
-            new Vector3(
-                screenPosition.x,
-                screenPosition.y,
-                0f
-            );
+        Vector3 screenPoint = new Vector3(
+            screenPosition.x,
+            screenPosition.y,
+            0f
+        );
 
-        Ray pointerRay =
-            placementCamera.ScreenPointToRay(
-                screenPoint
-            );
+        Ray pointerRay = placementCamera.ScreenPointToRay(screenPoint);
 
-        bool groundWasHit =
-            Physics.Raycast(
-                pointerRay,
-                out RaycastHit hit,
-                1000f,
-                groundLayer,
-                QueryTriggerInteraction.Ignore
-            );
+        bool groundWasHit = Physics.Raycast(
+            pointerRay,
+            out RaycastHit hit,
+            1000f,
+            groundLayer,
+            QueryTriggerInteraction.Ignore
+        );
 
         if (!groundWasHit)
         {
@@ -308,25 +301,11 @@ public class DefenseTowerPlacement : MonoBehaviour
         }
 
         pointerIsOnGround = true;
-
-        currentSnappedPosition =
-            SnapPositionToGrid(
-                hit.point
-            );
-
-        currentPositionInsideBuildZone =
-            IsInsideBuildZone(
-                currentSnappedPosition
-            );
-
-        currentPositionClearOfTowers =
-            IsFarEnoughFromPlacedTowers(
-                currentSnappedPosition
-            );
-
-        currentPositionAllowed =
-            currentPositionInsideBuildZone &&
-            currentPositionClearOfTowers;
+        currentSnappedPosition = SnapPositionToGrid(hit.point);
+        currentPositionInsideBuildZone = IsInsideBuildZone(currentSnappedPosition);
+        currentPositionClearOfTowers = IsFarEnoughFromPlacedTowers(currentSnappedPosition);
+        currentPositionAllowed = currentPositionInsideBuildZone &&
+                                 currentPositionClearOfTowers;
 
         UpdatePreview();
     }
@@ -338,28 +317,17 @@ public class DefenseTowerPlacement : MonoBehaviour
             return;
         }
 
-        previewInstance.transform.position =
-            currentSnappedPosition;
-
-        previewInstance.gameObject.SetActive(
-            true
-        );
-
-        previewInstance.SetPlacementAllowed(
-            currentPositionAllowed
-        );
+        previewInstance.transform.position = currentSnappedPosition;
+        previewInstance.gameObject.SetActive(true);
+        previewInstance.SetPlacementAllowed(currentPositionAllowed);
     }
 
     private void HidePreview()
     {
-        if (previewInstance == null)
+        if (previewInstance != null)
         {
-            return;
+            previewInstance.gameObject.SetActive(false);
         }
-
-        previewInstance.gameObject.SetActive(
-            false
-        );
     }
 
     private void DestroyPreview()
@@ -369,32 +337,16 @@ public class DefenseTowerPlacement : MonoBehaviour
             return;
         }
 
-        Destroy(
-            previewInstance.gameObject
-        );
-
+        Destroy(previewInstance.gameObject);
         previewInstance = null;
     }
 
-    private Vector3 SnapPositionToGrid(
-        Vector3 worldPosition
-    )
+    private Vector3 SnapPositionToGrid(Vector3 worldPosition)
     {
-        Vector3 positionFromCore =
-            worldPosition -
-            coreTower.position;
+        Vector3 positionFromCore = worldPosition - coreTower.position;
 
-        float snappedX =
-            Mathf.Round(
-                positionFromCore.x /
-                gridCellSize
-            ) * gridCellSize;
-
-        float snappedZ =
-            Mathf.Round(
-                positionFromCore.z /
-                gridCellSize
-            ) * gridCellSize;
+        float snappedX = Mathf.Round(positionFromCore.x / gridCellSize) * gridCellSize;
+        float snappedZ = Mathf.Round(positionFromCore.z / gridCellSize) * gridCellSize;
 
         return new Vector3(
             coreTower.position.x + snappedX,
@@ -403,56 +355,57 @@ public class DefenseTowerPlacement : MonoBehaviour
         );
     }
 
-    private bool IsInsideBuildZone(
-        Vector3 worldPosition
-    )
+    private bool IsInsideBuildZone(Vector3 worldPosition)
     {
-        Vector3 positionFromCore =
-            worldPosition -
-            coreTower.position;
-
+        Vector3 positionFromCore = worldPosition - coreTower.position;
         positionFromCore.y = 0f;
 
-        float distanceFromCore =
-            positionFromCore.magnitude;
+        float distanceFromCore = positionFromCore.magnitude;
 
-        return
-            distanceFromCore >=
-            minimumBuildRadius &&
-            distanceFromCore <=
-            maximumBuildRadius;
+        return distanceFromCore >= minimumBuildRadius &&
+               distanceFromCore <= maximumBuildRadius &&
+               IsTowerFootprintInsideGround(worldPosition);
     }
 
-    private bool IsFarEnoughFromPlacedTowers(
-        Vector3 worldPosition
-    )
+    private bool IsTowerFootprintInsideGround(Vector3 worldPosition)
+    {
+        // Map01 uses an axis-aligned, rectangular Ground collider.
+        // Check the WHOLE 3x3 (configurable) tower footprint, not only its center.
+        // Without an assigned reference, retain legacy placement behaviour.
+        if (buildGroundCollider == null)
+        {
+            return true;
+        }
+
+        Bounds groundBounds = buildGroundCollider.bounds;
+        float halfFootprint = towerFootprintCells * gridCellSize * 0.5f;
+        const float edgeTolerance = 0.0001f;
+
+        return worldPosition.x - halfFootprint >= groundBounds.min.x - edgeTolerance &&
+               worldPosition.x + halfFootprint <= groundBounds.max.x + edgeTolerance &&
+               worldPosition.z - halfFootprint >= groundBounds.min.z - edgeTolerance &&
+               worldPosition.z + halfFootprint <= groundBounds.max.z + edgeTolerance;
+    }
+
+    private bool IsFarEnoughFromPlacedTowers(Vector3 worldPosition)
     {
         float minimumDistance =
-            (
-                towerFootprintCells +
-                emptyCellsBetweenTowers
-            ) * gridCellSize;
+            (towerFootprintCells + emptyCellsBetweenTowers) * gridCellSize;
 
-        float minimumSqrDistance =
-            minimumDistance *
-            minimumDistance;
+        float minimumSqrDistance = minimumDistance * minimumDistance;
 
-        foreach (GameObject placedTower
-                 in placedTowers)
+        foreach (GameObject placedTower in placedTowers)
         {
             if (placedTower == null)
             {
                 continue;
             }
 
-            Vector3 positionDifference =
-                worldPosition -
-                placedTower.transform.position;
-
+            Vector3 positionDifference = worldPosition -
+                                         placedTower.transform.position;
             positionDifference.y = 0f;
 
-            if (positionDifference.sqrMagnitude <
-                minimumSqrDistance)
+            if (positionDifference.sqrMagnitude < minimumSqrDistance)
             {
                 return false;
             }
@@ -471,68 +424,50 @@ public class DefenseTowerPlacement : MonoBehaviour
         if (!pointerIsOnGround)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "The pointer is not over the ground."
+                "DefenseTowerPlacement: The pointer is not over the ground."
             );
-
             return;
         }
 
         if (!currentPositionInsideBuildZone)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "This position is outside " +
-                "the build zone."
+                "DefenseTowerPlacement: This position is outside the build zone."
             );
-
             return;
         }
 
         if (!currentPositionClearOfTowers)
         {
             Debug.LogWarning(
-                "DefenseTowerPlacement: " +
-                "This position is too close " +
-                "to another tower."
+                "DefenseTowerPlacement: This position is too close to another tower."
             );
-
             return;
         }
 
-        GameObject placedTower =
-            Instantiate(
-                towerPrefab,
-                currentSnappedPosition,
-                Quaternion.identity,
-                placedTowersParent
-            );
-
-        placedTowers.Add(
-            placedTower
+        GameObject placedTower = Instantiate(
+            towerPrefab,
+            currentSnappedPosition,
+            Quaternion.identity,
+            placedTowersParent
         );
 
-        placedTowerCount =
-            placedTowers.Count;
+        placedTowers.Add(placedTower);
+        placedTowerCount = placedTowers.Count;
 
         DefenseTowerHealth towerHealth =
-            placedTower
-                .GetComponent<DefenseTowerHealth>();
+            placedTower.GetComponent<DefenseTowerHealth>();
 
         if (towerHealth != null)
         {
-            towerHealth.Destroyed +=
-                OnTowerDestroyed;
+            towerHealth.Destroyed += OnTowerDestroyed;
         }
 
         Debug.Log(
-            "DefenseTowerPlacement: " +
-            "Tower placed at " +
-            currentSnappedPosition
+            "DefenseTowerPlacement: Tower placed at " + currentSnappedPosition
         );
 
-        if (placedTowerCount >=
-            maximumTowerCount)
+        if (placedTowerCount >= maximumTowerCount)
         {
             FinishPlacement();
             ReportAllTowerSlotsUsed();
@@ -546,16 +481,12 @@ public class DefenseTowerPlacement : MonoBehaviour
     {
         ResetCurrentPositionState();
         CreatePreview();
-
         isPlacementActive = true;
 
-        int remainingTowerSlots =
-            maximumTowerCount -
-            placedTowerCount;
+        int remainingTowerSlots = maximumTowerCount - placedTowerCount;
 
         Debug.Log(
-            "DefenseTowerPlacement: " +
-            remainingTowerSlots +
+            "DefenseTowerPlacement: " + remainingTowerSlots +
             " tower slot(s) remaining."
         );
     }
@@ -563,7 +494,6 @@ public class DefenseTowerPlacement : MonoBehaviour
     private void FinishPlacement()
     {
         isPlacementActive = false;
-
         ResetCurrentPositionState();
         DestroyPreview();
     }
@@ -577,11 +507,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         allTowerSlotsUsedReported = true;
 
-        Debug.Log(
-            "DefenseTowerPlacement: " +
-            "All tower slots used."
-        );
-
+        Debug.Log("DefenseTowerPlacement: All tower slots used.");
         AllTowerSlotsUsed?.Invoke();
     }
 
@@ -591,27 +517,20 @@ public class DefenseTowerPlacement : MonoBehaviour
         currentPositionInsideBuildZone = false;
         currentPositionClearOfTowers = false;
         currentPositionAllowed = false;
+        waitingForSecondTap = false;
     }
 
-    private void OnTowerDestroyed(
-        DefenseTowerHealth destroyedTower
-    )
+    private void OnTowerDestroyed(DefenseTowerHealth destroyedTower)
     {
         if (destroyedTower == null)
         {
             return;
         }
 
-        placedTowers.Remove(
-            destroyedTower.gameObject
-        );
+        placedTowers.Remove(destroyedTower.gameObject);
+        placedTowerCount = placedTowers.Count;
 
-        placedTowerCount =
-            placedTowers.Count;
-
-        if (isPlacementUnlocked &&
-            placedTowerCount <
-            maximumTowerCount)
+        if (isPlacementUnlocked && placedTowerCount < maximumTowerCount)
         {
             allTowerSlotsUsedReported = false;
         }
@@ -619,10 +538,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
     private void CleanupDestroyedTowers()
     {
-        for (int i =
-                 placedTowers.Count - 1;
-             i >= 0;
-             i--)
+        for (int i = placedTowers.Count - 1; i >= 0; i--)
         {
             if (placedTowers[i] == null)
             {
@@ -630,8 +546,7 @@ public class DefenseTowerPlacement : MonoBehaviour
             }
         }
 
-        placedTowerCount =
-            placedTowers.Count;
+        placedTowerCount = placedTowers.Count;
     }
 
     private void OnDrawGizmosSelected()
@@ -642,76 +557,30 @@ public class DefenseTowerPlacement : MonoBehaviour
         }
 
         Gizmos.color = Color.yellow;
-
-        Gizmos.DrawWireSphere(
-            coreTower.position,
-            minimumBuildRadius
-        );
+        Gizmos.DrawWireSphere(coreTower.position, minimumBuildRadius);
 
         Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(coreTower.position, maximumBuildRadius);
 
-        Gizmos.DrawWireSphere(
-            coreTower.position,
-            maximumBuildRadius
-        );
-
-        if (isPlacementActive &&
-            pointerIsOnGround)
+        if (isPlacementActive && pointerIsOnGround)
         {
-            if (currentPositionAllowed)
-            {
-                Gizmos.color = Color.green;
-            }
-            else
-            {
-                Gizmos.color = Color.red;
-            }
+            Gizmos.color = currentPositionAllowed ? Color.green : Color.red;
 
-            float footprintSize =
-                towerFootprintCells *
-                gridCellSize;
+            float footprintSize = towerFootprintCells * gridCellSize;
 
             Gizmos.DrawWireCube(
                 currentSnappedPosition,
-                new Vector3(
-                    footprintSize,
-                    0.2f,
-                    footprintSize
-                )
+                new Vector3(footprintSize, 0.2f, footprintSize)
             );
         }
     }
 
     private void OnValidate()
     {
-        gridCellSize =
-            Mathf.Max(
-                0.1f,
-                gridCellSize
-            );
-
-        minimumBuildRadius =
-            Mathf.Max(
-                0f,
-                minimumBuildRadius
-            );
-
-        maximumBuildRadius =
-            Mathf.Max(
-                minimumBuildRadius,
-                maximumBuildRadius
-            );
-
-        towerFootprintCells =
-            Mathf.Max(
-                1,
-                towerFootprintCells
-            );
-
-        emptyCellsBetweenTowers =
-            Mathf.Max(
-                0,
-                emptyCellsBetweenTowers
-            );
+        gridCellSize = Mathf.Max(0.1f, gridCellSize);
+        minimumBuildRadius = Mathf.Max(0f, minimumBuildRadius);
+        maximumBuildRadius = Mathf.Max(minimumBuildRadius, maximumBuildRadius);
+        towerFootprintCells = Mathf.Max(1, towerFootprintCells);
+        emptyCellsBetweenTowers = Mathf.Max(0, emptyCellsBetweenTowers);
     }
 }

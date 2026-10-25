@@ -112,7 +112,7 @@ MonoBehaviour:
     bossAttackDelay: 3
   preWavePreparationDuration: 20
   firstWaveStartDelay: 2
-  baseAvailableDefenseTowerSlots: 2
+  baseAvailableDefenseTowerSlots: 1
   betweenWaveHeroHealthRestorePercent: 20
   betweenWaveCoreTowerHealthRestorePercent: 15
   betweenWaveDefenseTowerHealthRestorePercent: 15
@@ -122,13 +122,13 @@ MonoBehaviour:
   waveComposition:
   - waveName: Wave 1
     enemyGroups:
-    - enemyType: 3
+    - enemyType: 2
       enemyCount: 1
       spawnInterval: 1.3
   - waveName: Wave 2
     enemyGroups:
-    - enemyType: 3
-      enemyCount: 1
+    - enemyType: 0
+      enemyCount: 6
       spawnInterval: 1.3
   - waveName: Wave 3
     enemyGroups:
