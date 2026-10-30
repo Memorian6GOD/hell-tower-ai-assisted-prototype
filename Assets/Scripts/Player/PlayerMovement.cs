@@ -7,6 +7,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private CombatStats combatStats;
 
+    [SerializeField]
+    private FloatingJoystickInput floatingJoystick;
+
     [Header("Movement Settings")]
     [SerializeField]
     private float gravity = -9.81f;
@@ -53,6 +56,13 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
+        if (floatingJoystick == null)
+        {
+            floatingJoystick = FindAnyObjectByType<FloatingJoystickInput>(
+                FindObjectsInactive.Include
+            );
+        }
+
         if (combatStats.HeroMoveSpeed <= 0f)
         {
             Debug.LogError(
@@ -76,41 +86,54 @@ public class PlayerMovement : MonoBehaviour
             return;
         }
 
-        if (Keyboard.current == null)
-        {
-            WantsToMove = false;
-            IsMoving = false;
+        Vector3 moveDirection = Vector3.zero;
 
-            return;
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard != null)
+        {
+            if (keyboard.wKey.isPressed)
+            {
+                moveDirection.z += 1f;
+            }
+
+            if (keyboard.sKey.isPressed)
+            {
+                moveDirection.z -= 1f;
+            }
+
+            if (keyboard.aKey.isPressed)
+            {
+                moveDirection.x -= 1f;
+            }
+
+            if (keyboard.dKey.isPressed)
+            {
+                moveDirection.x += 1f;
+            }
         }
 
-        Vector3 moveDirection =
-            Vector3.zero;
+        bool joystickHeld =
+            floatingJoystick != null &&
+            floatingJoystick.IsHeld;
 
-        if (Keyboard.current.wKey.isPressed)
+        if (joystickHeld)
         {
-            moveDirection.z += 1f;
+            Vector2 input = floatingJoystick.Direction;
+
+            moveDirection = new Vector3(
+                input.x,
+                0f,
+                input.y
+            );
         }
 
-        if (Keyboard.current.sKey.isPressed)
-        {
-            moveDirection.z -= 1f;
-        }
+        moveDirection = moveDirection.normalized;
 
-        if (Keyboard.current.aKey.isPressed)
-        {
-            moveDirection.x -= 1f;
-        }
-
-        if (Keyboard.current.dKey.isPressed)
-        {
-            moveDirection.x += 1f;
-        }
-
-        moveDirection =
-            moveDirection.normalized;
-
+        // Holding the joystick blocks auto-fire even inside the dead zone.
+        // Releasing the finger immediately enables auto-fire again.
         WantsToMove =
+            joystickHeld ||
             moveDirection.sqrMagnitude > 0.01f;
 
         if (WantsToMove &&
@@ -142,6 +165,12 @@ public class PlayerMovement : MonoBehaviour
         characterController.Move(
             finalMovement * Time.deltaTime
         );
+    }
+
+    private void OnDisable()
+    {
+        WantsToMove = false;
+        IsMoving = false;
     }
 
     private bool IsEnemyBlockingMovement(

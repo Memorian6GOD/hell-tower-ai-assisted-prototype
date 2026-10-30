@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameBalanceConfig
   heroBaseMaxHealth: 100
   heroBaseDamage: 20
-  heroBaseMoveSpeed: 5
+  heroBaseMoveSpeed: 4.5
   heroBaseAttackInterval: 1
   heroAttackRadius: 5.5
   heroBaseAttackWindup: 0.2
@@ -41,15 +41,15 @@ MonoBehaviour:
   defenseTowerBaseMaxHealth: 300
   defenseTowerDamageCoefficient: 0.5
   defenseTowerBaseAttackInterval: 1
-  defenseTowerAttackRadius: 6
+  defenseTowerAttackRadius: 8
   defenseTowerProjectileSpeed: 12
-  enemyAggroRadius: 4
-  enemyDisengageRadius: 5
-  enemyAggroConfirmationTime: 0.3
+  enemyAggroRadius: 7
+  enemyDisengageRadius: 8.5
+  enemyAggroConfirmationTime: 0.2
   meleeEnemy:
     baseMaxHealth: 35
     baseDamage: 15
-    moveSpeed: 2
+    moveSpeed: 2.1
     attackInterval: 1
     attackWindup: 0.5
   rangedEnemy:
@@ -61,8 +61,8 @@ MonoBehaviour:
   rangedEnemyProjectileSpeed: 8
   strongEnemy:
     baseMaxHealth: 100
-    baseDamage: 25
-    moveSpeed: 1.5
+    baseDamage: 35
+    moveSpeed: 2
     attackInterval: 1.4
     attackWindup: 0.8
   siegeEnemy:
@@ -378,7 +378,7 @@ MonoBehaviour:
     bonusPercent: 15
     maximumStacks: 2
   heroDoubleShot:
-    projectileDamageMultiplier: 0.85
+    projectileDamageMultiplier: 0.9
     attackIntervalMultiplier: 1.1
     windupPenalty: 0.1
     projectileOffset: 0.08

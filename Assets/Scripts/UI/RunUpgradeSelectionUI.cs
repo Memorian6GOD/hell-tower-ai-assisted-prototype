@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -32,6 +33,7 @@ public sealed class RunUpgradeCardUI
 
         titleText.text = definition.DisplayName;
         descriptionText.text = definition.Description;
+
         if (stackText != null)
         {
             stackText.text =
@@ -87,6 +89,10 @@ public class RunUpgradeSelectionUI : MonoBehaviour
     [SerializeField] private int visibleOptionCount;
 
     private Action selectionCompleted;
+
+    // Pause management.
+    private bool pausedBySelection;
+    private float timeScaleBeforeSelection = 1f;
 
     public bool IsOpen => isOpen;
 
@@ -202,6 +208,8 @@ public class RunUpgradeSelectionUI : MonoBehaviour
                 ? "CHOOSE A TOWER UPGRADE"
                 : "CHOOSE A HERO UPGRADE";
         }
+
+        PauseGameplay();
 
         selectionRoot.SetActive(true);
 
@@ -319,6 +327,63 @@ public class RunUpgradeSelectionUI : MonoBehaviour
         {
             selectionRoot.SetActive(false);
         }
+
+        RestoreGameplayTime();
+    }
+
+    // Stop gameplay while the player chooses an upgrade.
+    private void PauseGameplay()
+    {
+        if (pausedBySelection)
+        {
+            return;
+        }
+
+        timeScaleBeforeSelection = Time.timeScale;
+        pausedBySelection = true;
+
+        Time.timeScale = 0f;
+
+        Debug.Log(
+            $"RunUpgradeSelectionUI: Game paused. " +
+            $"Previous time scale = {timeScaleBeforeSelection:F2}.",
+            this
+        );
+    }
+
+    // Restore the previous game speed after closing the window.
+    private void RestoreGameplayTime()
+    {
+        if (!pausedBySelection)
+        {
+            return;
+        }
+
+        pausedBySelection = false;
+
+        // Game Over owns its pause and must not be cancelled.
+        GameManager gameManager =
+            FindAnyObjectByType<GameManager>();
+
+        if (gameManager != null &&
+            gameManager.IsGameOver)
+        {
+            return;
+        }
+
+        // Preserve changes made by another system.
+        if (!Mathf.Approximately(Time.timeScale, 0f))
+        {
+            return;
+        }
+
+        Time.timeScale = timeScaleBeforeSelection;
+
+        Debug.Log(
+            $"RunUpgradeSelectionUI: Game time restored " +
+            $"to {Time.timeScale:F2}.",
+            this
+        );
     }
 
     private void OnDisable()

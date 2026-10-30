@@ -1822,6 +1822,14 @@ public class GameBalanceConfig : ScriptableObject
             0f,
             1
         ));
+
+        EnsureRunUpgradeDefinition(new RunUpgradeDefinition(
+            RunUpgradeType.HeroMoveSpeed,
+            "SWIFTNESS",
+            "Increases hero movement speed by 10%.",
+            10f,
+            1
+        ));
     }
 
     private void EnsureRunUpgradeDefinition(RunUpgradeDefinition definitionToAdd)

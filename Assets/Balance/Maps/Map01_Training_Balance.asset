@@ -13,22 +13,22 @@ MonoBehaviour:
   m_Name: Map01_Training_Balance
   m_EditorClassIdentifier: Assembly-CSharp::MapBalanceConfig
   mapName: Map01_Training
-  enemyMoveSpeedMultiplier: 1.1
+  enemyMoveSpeedMultiplier: 1.25
   waveComposition:
   - waveName: Wave 1
     enemyGroups:
     - enemyType: 0
-      enemyCount: 5
+      enemyCount: 6
       spawnInterval: 1.3
   - waveName: Wave 2
     enemyGroups:
     - enemyType: 0
-      enemyCount: 8
+      enemyCount: 10
       spawnInterval: 1.1
   - waveName: Wave 3
     enemyGroups:
     - enemyType: 0
-      enemyCount: 8
+      enemyCount: 10
       spawnInterval: 1.3
     - enemyType: 1
       enemyCount: 4
@@ -36,7 +36,7 @@ MonoBehaviour:
   - waveName: Wave 4
     enemyGroups:
     - enemyType: 0
-      enemyCount: 6
+      enemyCount: 7
       spawnInterval: 1.3
     - enemyType: 1
       enemyCount: 5
@@ -44,7 +44,7 @@ MonoBehaviour:
   - waveName: Wave 5
     enemyGroups:
     - enemyType: 0
-      enemyCount: 5
+      enemyCount: 6
       spawnInterval: 1.5
     - enemyType: 1
       enemyCount: 4
@@ -55,7 +55,7 @@ MonoBehaviour:
   - waveName: Wave 6
     enemyGroups:
     - enemyType: 0
-      enemyCount: 6
+      enemyCount: 7
       spawnInterval: 1.1
     - enemyType: 1
       enemyCount: 5
@@ -63,7 +63,7 @@ MonoBehaviour:
   - waveName: Wave 7
     enemyGroups:
     - enemyType: 0
-      enemyCount: 7
+      enemyCount: 8
       spawnInterval: 1
     - enemyType: 1
       enemyCount: 5
@@ -71,7 +71,7 @@ MonoBehaviour:
   - waveName: Wave 8
     enemyGroups:
     - enemyType: 0
-      enemyCount: 6
+      enemyCount: 7
       spawnInterval: 1
     - enemyType: 1
       enemyCount: 5
@@ -82,7 +82,7 @@ MonoBehaviour:
   - waveName: Wave 9
     enemyGroups:
     - enemyType: 0
-      enemyCount: 6
+      enemyCount: 7
       spawnInterval: 0.9
     - enemyType: 1
       enemyCount: 6
@@ -135,9 +135,15 @@ MonoBehaviour:
       spawnInterval: 1.3
   - waveName: Wave 15
     enemyGroups:
-    - enemyType: 4
-      enemyCount: 1
-      spawnInterval: 2
+    - enemyType: 0
+      enemyCount: 11
+      spawnInterval: 1
+    - enemyType: 1
+      enemyCount: 7
+      spawnInterval: 1
+    - enemyType: 2
+      enemyCount: 4
+      spawnInterval: 1.3
   waveBalance:
   - healthMultiplier: 1
     damageMultiplier: 1

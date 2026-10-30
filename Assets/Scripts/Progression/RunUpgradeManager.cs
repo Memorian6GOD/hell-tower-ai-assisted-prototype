@@ -33,7 +33,10 @@ public enum RunUpgradeType
     // IMPORTANT:
     // New enum values must only be appended at the end.
     TowerHealth,
-    TowerHealthStrong
+    TowerHealthStrong,
+
+    // New types are appended to preserve existing Unity enum values.
+    HeroMoveSpeed
 }
 
 
@@ -92,6 +95,7 @@ public sealed class RunUpgradeDefinition
 
                 case RunUpgradeType.HeroHealth:
                 case RunUpgradeType.HeroHealthStrong:
+                case RunUpgradeType.HeroMoveSpeed:
 
                 case RunUpgradeType.TowerHealth:
                 case RunUpgradeType.TowerHealthStrong:
@@ -305,6 +309,14 @@ public sealed class RunUpgradeDefinition
                     "%.";
 
 
+            case RunUpgradeType.HeroMoveSpeed:
+
+                return
+                    "Increases hero movement speed by " +
+                    formattedPercent +
+                    "%.";
+
+
             case RunUpgradeType.TowerDamage:
             case RunUpgradeType.TowerDamageStrong:
 
@@ -465,6 +477,9 @@ public class RunUpgradeManager : MonoBehaviour
 
     [SerializeField]
     private int debugHeroSlowStacks;
+
+    [SerializeField]
+    private int debugHeroMoveSpeedStacks;
 
     [SerializeField]
     private int debugAvailableUpgradeCount;
@@ -790,6 +805,14 @@ public class RunUpgradeManager : MonoBehaviour
 
                 return combatStats
                     .TryAddHeroRunAttackSpeedBonusPercent(
+                        definition.BonusPercent
+                    );
+
+
+            case RunUpgradeType.HeroMoveSpeed:
+
+                return combatStats
+                    .TryAddHeroRunMoveSpeedBonusPercent(
                         definition.BonusPercent
                     );
 
@@ -1587,6 +1610,11 @@ public class RunUpgradeManager : MonoBehaviour
         debugHeroSlowStacks =
             GetStackCount(
                 RunUpgradeType.HeroSlow
+            );
+
+        debugHeroMoveSpeedStacks =
+            GetStackCount(
+                RunUpgradeType.HeroMoveSpeed
             );
 
         if (!selectionInProgress)

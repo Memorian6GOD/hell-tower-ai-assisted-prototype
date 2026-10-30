@@ -46,6 +46,7 @@ public class CombatStats : MonoBehaviour
     private float towerAttackSpeedBonusPercent;
 
     private float heroCritChanceBonusPercent;
+    private float heroMoveSpeedBonusPercent;
 
 
     public float HeroRunDamageBonusPercent =>
@@ -58,6 +59,12 @@ public class CombatStats : MonoBehaviour
         Mathf.Max(
             0f,
             heroAttackSpeedBonusPercent
+        );
+
+    public float HeroRunMoveSpeedBonusPercent =>
+        Mathf.Max(
+            0f,
+            heroMoveSpeedBonusPercent
         );
 
     public float HeroRunCritChanceBonusPercent =>
@@ -92,8 +99,8 @@ public class CombatStats : MonoBehaviour
                 return 0f;
             }
 
-            return balanceConfig
-                .HeroBaseMoveSpeed;
+            return balanceConfig.HeroBaseMoveSpeed *
+                (1f + HeroRunMoveSpeedBonusPercent / 100f);
         }
     }
 
@@ -556,6 +563,17 @@ public class CombatStats : MonoBehaviour
         );
     }
 
+    public bool TryAddHeroRunMoveSpeedBonusPercent(
+        float amount
+    )
+    {
+        return TryAddRunBonusPercent(
+            ref heroMoveSpeedBonusPercent,
+            amount,
+            "hero movement speed"
+        );
+    }
+
     public bool TryAddHeroRunCritChanceBonusPercent(
         float amount
     )
@@ -1001,6 +1019,30 @@ public class CombatStats : MonoBehaviour
             $"{HeroProjectileSpeed:F2} | " +
             $"Tower projectile speed: " +
             $"{TowerProjectileSpeed:F2}",
+            this
+        );
+    }
+
+    [ContextMenu(
+        "Print Move Speed Report"
+    )]
+    private void PrintMoveSpeedReport()
+    {
+        if (balanceConfig == null)
+        {
+            Debug.LogError(
+                "CombatStats: Assign GameBalanceConfig.",
+                this
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            "CombatStats | " +
+            $"Base hero move speed: {balanceConfig.HeroBaseMoveSpeed:F2} | " +
+            $"Run move speed bonus: {HeroRunMoveSpeedBonusPercent:F2}% | " +
+            $"Final hero move speed: {HeroMoveSpeed:F2}",
             this
         );
     }
