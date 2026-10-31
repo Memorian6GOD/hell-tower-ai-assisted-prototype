@@ -377,6 +377,11 @@ MonoBehaviour:
     customDescription: 
     bonusPercent: 15
     maximumStacks: 2
+  - upgradeType: 19
+    displayName: SWIFTNESS
+    customDescription: 
+    bonusPercent: 10
+    maximumStacks: 1
   heroDoubleShot:
     projectileDamageMultiplier: 0.9
     attackIntervalMultiplier: 1.1

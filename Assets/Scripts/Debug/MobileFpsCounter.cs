@@ -1,42 +1,48 @@
+
 using UnityEngine;
 
 /// <summary>
-/// Temporary on-device FPS display for Android performance tests.
-/// Does not change the game's frame-rate limit unless an override is set.
+/// FPS diagnostic overlay for mobile testing.
+/// Measures performance without changing the FPS limit.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class MobileFpsCounter : MonoBehaviour
 {
-    [Header("FPS measurement")]
+    private enum OverlayCorner
+    {
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight
+    }
+
+    [Header("FPS Measurement")]
     [SerializeField, Range(0.25f, 2f)]
     private float sampleInterval = 1f;
 
+    [Header("Overlay Settings")]
     [SerializeField]
     private bool showOverlay = true;
 
-    [Header("Optional FPS limit test")]
-    [SerializeField, Min(0)]
-    [Tooltip("0 = leave Unity's current FPS limit unchanged. Try 60 later for a separate test.")]
-    private int targetFpsOverride = 0;
+    [SerializeField]
+    private OverlayCorner overlayCorner = OverlayCorner.BottomRight;
+
+    [SerializeField]
+    private bool hideWhenPaused = true;
 
     private int countedFrames;
     private float countedSeconds;
+
     private float measuredFps;
     private float averageFrameMilliseconds;
-    private GUIStyle textStyle;
 
-    private void Awake()
-    {
-        // First test: keep this at zero to measure the existing game unchanged.
-        if (targetFpsOverride > 0)
-        {
-            Application.targetFrameRate = targetFpsOverride;
-        }
-    }
+    private string overlayText = "FPS: --\nTarget: --";
+
+    private GUIStyle textStyle;
 
     private void Update()
     {
-        // Unscaled time keeps the counter working even in the upgrade pause.
+        // Continue measuring with unscaled time.
         float delta = Time.unscaledDeltaTime;
 
         if (delta <= 0f)
@@ -53,7 +59,17 @@ public sealed class MobileFpsCounter : MonoBehaviour
         }
 
         measuredFps = countedFrames / countedSeconds;
-        averageFrameMilliseconds = 1000f * countedSeconds / countedFrames;
+
+        averageFrameMilliseconds =
+            1000f * countedSeconds / countedFrames;
+
+        string target = Application.targetFrameRate < 0
+            ? "default"
+            : Application.targetFrameRate.ToString();
+
+        overlayText =
+            $"FPS: {measuredFps:0}  {averageFrameMilliseconds:0.0} ms\n" +
+            $"Target: {target}";
 
         countedFrames = 0;
         countedSeconds = 0f;
@@ -61,26 +77,79 @@ public sealed class MobileFpsCounter : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!showOverlay || Event.current.type != EventType.Repaint)
+        if (!showOverlay)
         {
             return;
         }
 
-        // IMGUI uses top-left coordinates; Screen.safeArea uses bottom-left.
+        if (hideWhenPaused && Time.timeScale <= 0f)
+        {
+            return;
+        }
+
+        if (Event.current.type != EventType.Repaint)
+        {
+            return;
+        }
+
+        // Screen.safeArea uses bottom-left coordinates.
+        // IMGUI uses top-left coordinates.
         Rect safeArea = Screen.safeArea;
-        float scale = Mathf.Clamp(Screen.width / 480f, 1f, 3f);
-        float margin = 8f * scale;
-        float width = Mathf.Min(200f * scale, safeArea.width - margin * 2f);
-        float height = 64f * scale;
 
-        if (width <= 0f)
+        float scale = Mathf.Clamp(
+            Screen.width / 480f,
+            1f,
+            2f
+        );
+
+        float margin = 10f * scale;
+
+        float width = Mathf.Min(
+            160f * scale,
+            safeArea.width - margin * 2f
+        );
+
+        float height = 54f * scale;
+
+        if (width <= 0f || height + margin * 2f > safeArea.height)
         {
             return;
         }
 
-        float x = safeArea.xMax - width - margin;
-        float y = Screen.height - safeArea.yMax + margin;
-        Rect background = new Rect(x, y, width, height);
+        float left = safeArea.xMin + margin;
+        float right = safeArea.xMax - width - margin;
+
+        float top =
+            Screen.height - safeArea.yMax + margin;
+
+        float bottom =
+            Screen.height - safeArea.yMin - height - margin;
+
+        float x;
+        float y;
+
+        switch (overlayCorner)
+        {
+            case OverlayCorner.TopLeft:
+                x = left;
+                y = top;
+                break;
+
+            case OverlayCorner.TopRight:
+                x = right;
+                y = top;
+                break;
+
+            case OverlayCorner.BottomLeft:
+                x = left;
+                y = bottom;
+                break;
+
+            default:
+                x = right;
+                y = bottom;
+                break;
+        }
 
         if (textStyle == null)
         {
@@ -92,26 +161,60 @@ public sealed class MobileFpsCounter : MonoBehaviour
             };
         }
 
-        textStyle.fontSize = Mathf.RoundToInt(14f * scale);
+        textStyle.fontSize =
+            Mathf.RoundToInt(13f * scale);
+
+        Rect background = new Rect(
+            x,
+            y,
+            width,
+            height
+        );
+
+        Rect textRect = new Rect(
+            x + margin,
+            y + 4f * scale,
+            width - margin * 2f,
+            height - 8f * scale
+        );
 
         int previousDepth = GUI.depth;
         Color previousColor = GUI.color;
 
         GUI.depth = -100;
-        GUI.color = new Color(0f, 0f, 0f, 0.8f);
-        GUI.DrawTexture(background, Texture2D.whiteTexture);
 
-        GUI.color = measuredFps >= 50f ? Color.green
-            : measuredFps >= 28f ? Color.yellow : Color.white;
+        // Semi-transparent dark background.
+        GUI.color = new Color(
+            0.07f,
+            0.05f,
+            0.10f,
+            0.85f
+        );
 
-        string target = Application.targetFrameRate < 0
-            ? "default"
-            : Application.targetFrameRate.ToString();
+        GUI.DrawTexture(
+            background,
+            Texture2D.whiteTexture
+        );
+
+        // Performance indicator colors.
+        if (measuredFps >= 50f)
+        {
+            GUI.color = Color.green;
+        }
+        else if (measuredFps >= 28f)
+        {
+            GUI.color = Color.yellow;
+        }
+        else
+        {
+            GUI.color = Color.red;
+        }
 
         GUI.Label(
-            new Rect(x + margin, y + margin * 0.5f, width - margin * 2f, height - margin),
-            $"FPS: {measuredFps:0}   {averageFrameMilliseconds:0.0} ms\nTarget: {target}",
-            textStyle);
+            textRect,
+            overlayText,
+            textStyle
+        );
 
         GUI.color = previousColor;
         GUI.depth = previousDepth;

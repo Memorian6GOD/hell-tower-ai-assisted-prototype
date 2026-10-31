@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -62,6 +63,12 @@ public class DefenseTowerPlacement : MonoBehaviour
     private void Update()
     {
         if (!isPlacementActive)
+        {
+            return;
+        }
+
+        // Do not process placement input while the game is paused.
+        if (Time.timeScale <= 0f)
         {
             return;
         }
@@ -416,6 +423,12 @@ public class DefenseTowerPlacement : MonoBehaviour
 
     private void TryPlaceTower()
     {
+        // Never instantiate a tower while the game is paused.
+        if (Time.timeScale <= 0f)
+        {
+            return;
+        }
+
         if (!isPlacementUnlocked)
         {
             return;
