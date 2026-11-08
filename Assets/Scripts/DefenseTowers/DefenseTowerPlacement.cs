@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class DefenseTowerPlacement : MonoBehaviour
 {
@@ -12,6 +14,9 @@ public class DefenseTowerPlacement : MonoBehaviour
     [SerializeField] private GameObject towerPrefab;
     [SerializeField] private DefenseTowerPlacementPreview previewPrefab;
     [SerializeField] private Transform placedTowersParent;
+
+    [Header("Placement UI")]
+    [SerializeField] private Button confirmBuildButton;
 
     [Header("Build Zone Settings")]
     [SerializeField] private LayerMask groundLayer;
@@ -35,12 +40,13 @@ public class DefenseTowerPlacement : MonoBehaviour
     [SerializeField] private int maximumTowerCount;
     [SerializeField] private int placedTowerCount;
 
-    // First tap selects a cell; only the second tap on that cell builds.
-    [SerializeField] private bool waitingForSecondTap;
+    // A ground tap selects a cell; the separate UI button confirms it.
+    [SerializeField] private bool hasSelectedPosition;
 
     private readonly List<GameObject> placedTowers = new List<GameObject>();
     private DefenseTowerPlacementPreview previewInstance;
     private bool allTowerSlotsUsedReported;
+    private readonly List<RaycastResult> uiRaycastResults = new List<RaycastResult>();
 
     public event Action AllTowerSlotsUsed;
 
@@ -58,6 +64,20 @@ public class DefenseTowerPlacement : MonoBehaviour
         allTowerSlotsUsedReported = false;
 
         ResetCurrentPositionState();
+
+        if (confirmBuildButton != null)
+        {
+            confirmBuildButton.onClick.AddListener(ConfirmPlacement);
+            SetConfirmButtonVisible(false);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (confirmBuildButton != null)
+        {
+            confirmBuildButton.onClick.RemoveListener(ConfirmPlacement);
+        }
     }
 
     private void Update()
@@ -87,7 +107,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         if (currentPointer == null)
         {
-            if (!waitingForSecondTap)
+            if (!hasSelectedPosition)
             {
                 ResetCurrentPositionState();
                 HidePreview();
@@ -100,59 +120,95 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         if (currentPointer.press.wasPressedThisFrame)
         {
-            HandlePlacementPress(screenPosition);
+            if (!IsPointerOverUI(screenPosition))
+            {
+                SelectPlacementPosition(screenPosition);
+            }
+
             return;
         }
 
         // Mouse has a cursor, so show a normal hover preview until
-        // the first click locks a cell. Touchscreens have no hover.
-        if (!waitingForSecondTap && currentPointer is Mouse)
+        // a click selects a cell. Touchscreens have no hover.
+        if (!hasSelectedPosition && currentPointer is Mouse)
         {
             UpdatePointerPosition(screenPosition);
         }
     }
 
-    private void HandlePlacementPress(Vector2 screenPosition)
+    private bool IsPointerOverUI(Vector2 screenPosition)
     {
-        bool hadPendingSelection = waitingForSecondTap;
-        Vector3 previouslySelectedPosition = currentSnappedPosition;
-
-        // Inspect the location of THIS tap; the old preview position
-        // must not accidentally be used when the finger moves.
-        UpdatePointerPosition(screenPosition);
-
-        if (!pointerIsOnGround || !currentPositionAllowed)
+        if (EventSystem.current == null)
         {
-            // Keep the red preview if we hit ground in a blocked area.
-            // A blocked tap can never confirm a tower.
-            waitingForSecondTap = false;
-            return;
+            return false;
         }
 
-        if (hadPendingSelection &&
-            IsSameGridCell(previouslySelectedPosition, currentSnappedPosition))
+        PointerEventData eventData = new PointerEventData(EventSystem.current)
         {
-            waitingForSecondTap = false;
-            TryPlaceTower();
-            return;
+            position = screenPosition
+        };
+
+        uiRaycastResults.Clear();
+        EventSystem.current.RaycastAll(eventData, uiRaycastResults);
+
+        foreach (RaycastResult result in uiRaycastResults)
+        {
+            if (result.module is GraphicRaycaster)
+            {
+                return true;
+            }
         }
 
-        // First tap, or a tap on a different cell: select only.
-        waitingForSecondTap = true;
-
-        Debug.Log(
-            "DefenseTowerPlacement: Selected cell " +
-            currentSnappedPosition +
-            ". Tap the same cell again to build."
-        );
+        return false;
     }
 
-    private bool IsSameGridCell(Vector3 first, Vector3 second)
+    private void SelectPlacementPosition(Vector2 screenPosition)
     {
-        float tolerance = gridCellSize * 0.25f;
+        // Only a real ground tap selects a cell; moving the finger
+        // or hovering over a cell never confirms a tower.
+        UpdatePointerPosition(screenPosition);
+        hasSelectedPosition = pointerIsOnGround && currentPositionAllowed;
+        UpdateConfirmButton();
 
-        return Mathf.Abs(first.x - second.x) < tolerance &&
-               Mathf.Abs(first.z - second.z) < tolerance;
+        if (hasSelectedPosition)
+        {
+            Debug.Log(
+                "DefenseTowerPlacement: Selected cell " +
+                currentSnappedPosition +
+                ". Press the Build button to confirm."
+            );
+        }
+    }
+
+    // This method is registered automatically on confirmBuildButton in Awake.
+    public void ConfirmPlacement()
+    {
+        if (!isPlacementActive || !hasSelectedPosition || !currentPositionAllowed)
+        {
+            return;
+        }
+
+        TryPlaceTower();
+    }
+
+    private void SetConfirmButtonVisible(bool visible)
+    {
+        if (confirmBuildButton == null)
+        {
+            return;
+        }
+
+        confirmBuildButton.gameObject.SetActive(visible);
+        UpdateConfirmButton();
+    }
+
+    private void UpdateConfirmButton()
+    {
+        if (confirmBuildButton != null)
+        {
+            confirmBuildButton.interactable =
+                isPlacementActive && hasSelectedPosition && currentPositionAllowed;
+        }
     }
 
     public void OpenPlacement(int availableTowerSlots)
@@ -165,6 +221,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         if (placedTowerCount >= maximumTowerCount)
         {
+            FinishPlacement();
             ReportAllTowerSlotsUsed();
             return;
         }
@@ -179,6 +236,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         ResetCurrentPositionState();
         DestroyPreview();
+        SetConfirmButtonVisible(false);
 
         Debug.Log("DefenseTowerPlacement: Building is locked.");
     }
@@ -238,6 +296,14 @@ public class DefenseTowerPlacement : MonoBehaviour
             return;
         }
 
+        if (confirmBuildButton == null)
+        {
+            Debug.LogWarning(
+                "DefenseTowerPlacement: Confirm Build Button is not assigned."
+            );
+            return;
+        }
+
         if (placedTowerCount >= maximumTowerCount)
         {
             ReportAllTowerSlotsUsed();
@@ -255,6 +321,7 @@ public class DefenseTowerPlacement : MonoBehaviour
         ResetCurrentPositionState();
         CreatePreview();
         isPlacementActive = true;
+        SetConfirmButtonVisible(true);
 
         Debug.Log("DefenseTowerPlacement: Tower placement started.");
     }
@@ -265,6 +332,7 @@ public class DefenseTowerPlacement : MonoBehaviour
 
         ResetCurrentPositionState();
         DestroyPreview();
+        SetConfirmButtonVisible(false);
 
         Debug.Log("DefenseTowerPlacement: Placement cancelled.");
     }
@@ -429,7 +497,7 @@ public class DefenseTowerPlacement : MonoBehaviour
             return;
         }
 
-        if (!isPlacementUnlocked)
+        if (!isPlacementUnlocked || !isPlacementActive || !hasSelectedPosition)
         {
             return;
         }
@@ -495,6 +563,7 @@ public class DefenseTowerPlacement : MonoBehaviour
         ResetCurrentPositionState();
         CreatePreview();
         isPlacementActive = true;
+        SetConfirmButtonVisible(true);
 
         int remainingTowerSlots = maximumTowerCount - placedTowerCount;
 
@@ -509,6 +578,7 @@ public class DefenseTowerPlacement : MonoBehaviour
         isPlacementActive = false;
         ResetCurrentPositionState();
         DestroyPreview();
+        SetConfirmButtonVisible(false);
     }
 
     private void ReportAllTowerSlotsUsed()
@@ -530,7 +600,8 @@ public class DefenseTowerPlacement : MonoBehaviour
         currentPositionInsideBuildZone = false;
         currentPositionClearOfTowers = false;
         currentPositionAllowed = false;
-        waitingForSecondTap = false;
+        hasSelectedPosition = false;
+        UpdateConfirmButton();
     }
 
     private void OnTowerDestroyed(DefenseTowerHealth destroyedTower)

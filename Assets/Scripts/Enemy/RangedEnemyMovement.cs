@@ -21,6 +21,10 @@ public class RangedEnemyMovement : MonoBehaviour
     [SerializeField]
     private float navMeshSampleDistance = 2f;
 
+    [Header("Player LOS Reposition Settings")]
+    [SerializeField]
+    private float playerPathRefreshInterval = 0.4f;
+
 
     [Header("Debug - Do Not Edit")]
     [SerializeField]
@@ -92,10 +96,12 @@ public class RangedEnemyMovement : MonoBehaviour
 
     private Collider enemyCollider;
     private NavMeshAgent agent;
+    private RangedEnemyAttack rangedEnemyAttack;
 
     private Transform currentCoreTowerSlot;
 
     private float aggroConfirmationTimer;
+    private float nextPlayerRepathTime;
 
     private bool hasCoreTowerDestination;
 
@@ -153,6 +159,9 @@ public class RangedEnemyMovement : MonoBehaviour
 
         enemyCollider =
             GetComponent<Collider>();
+
+        rangedEnemyAttack =
+            GetComponent<RangedEnemyAttack>();
 
         coreTower =
             FindAnyObjectByType<CoreTowerHealth>();
@@ -246,6 +255,15 @@ public class RangedEnemyMovement : MonoBehaviour
             Debug.LogWarning(
                 "RangedEnemyMovement: PlayerAggro " +
                 "was not found.",
+                this
+            );
+        }
+
+        if (rangedEnemyAttack == null)
+        {
+            Debug.LogWarning(
+                "RangedEnemyMovement: RangedEnemyAttack " +
+                "was not found. Player LOS movement is disabled.",
                 this
             );
         }
@@ -400,7 +418,7 @@ public class RangedEnemyMovement : MonoBehaviour
             true;
 
         IsAtTarget =
-            true;
+            false;
 
         hasCoreTowerDestination =
             false;
@@ -410,6 +428,9 @@ public class RangedEnemyMovement : MonoBehaviour
 
         agent.ResetPath();
 
+        nextPlayerRepathTime =
+            0f;
+
         aggroConfirmationTimer =
             0f;
     }
@@ -417,13 +438,59 @@ public class RangedEnemyMovement : MonoBehaviour
 
     private void UpdatePlayerTarget()
     {
+        if (rangedEnemyAttack == null ||
+            playerHealth == null)
+        {
+            StopAgent();
+            return;
+        }
+
+        // A clear firing line allows the ranged enemy to stand still
+        // and attack from its current position.
+        if (rangedEnemyAttack.HasClearShotToPlayer())
+        {
+            IsAtTarget =
+                true;
+
+            agent.isStopped =
+                true;
+
+            if (agent.hasPath)
+            {
+                agent.ResetPath();
+            }
+
+            RotateTowardsPlayer();
+            return;
+        }
+
+        // Keep aggro, but walk around obstacles until the firing line
+        // is unobstructed. NavMesh handles walls and carved towers.
         IsAtTarget =
-            true;
+            false;
 
         agent.isStopped =
-            true;
+            false;
 
-        RotateTowardsPlayer();
+        if (Time.time < nextPlayerRepathTime)
+        {
+            return;
+        }
+
+        nextPlayerRepathTime =
+            Time.time + playerPathRefreshInterval;
+
+        if (NavMesh.SamplePosition(
+                playerHealth.transform.position,
+                out NavMeshHit hit,
+                navMeshSampleDistance,
+                agent.areaMask))
+        {
+            agent.stoppingDistance =
+                0f;
+
+            agent.SetDestination(hit.position);
+        }
     }
 
 
@@ -447,6 +514,9 @@ public class RangedEnemyMovement : MonoBehaviour
             false;
 
         agent.ResetPath();
+
+        nextPlayerRepathTime =
+            0f;
 
         aggroConfirmationTimer =
             0f;
@@ -898,6 +968,12 @@ public class RangedEnemyMovement : MonoBehaviour
             Mathf.Max(
                 0.01f,
                 moveSpeed
+            );
+
+        playerPathRefreshInterval =
+            Mathf.Max(
+                0.1f,
+                playerPathRefreshInterval
             );
     }
 }

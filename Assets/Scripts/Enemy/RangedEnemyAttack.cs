@@ -50,6 +50,7 @@ public class RangedEnemyAttack : MonoBehaviour
 
     private PlayerHealth playerHealth;
     private Collider playerCollider;
+    private Collider enemyCollider;
 
     private AttackTarget currentAttackTarget;
 
@@ -127,6 +128,9 @@ public class RangedEnemyAttack : MonoBehaviour
 
         rangedEnemyMovement =
             GetComponent<RangedEnemyMovement>();
+
+        enemyCollider =
+            GetComponent<Collider>();
 
         coreTower =
             FindAnyObjectByType<CoreTowerHealth>();
@@ -224,7 +228,9 @@ public class RangedEnemyAttack : MonoBehaviour
             GetDesiredAttackTarget();
 
         if (!rangedEnemyMovement.IsAtTarget ||
-            desiredTarget == AttackTarget.None)
+            desiredTarget == AttackTarget.None ||
+            (desiredTarget == AttackTarget.Player &&
+             !HasClearShotToPlayer()))
         {
             currentAttackTarget =
                 AttackTarget.None;
@@ -320,6 +326,37 @@ public class RangedEnemyAttack : MonoBehaviour
     // TARGETING
     // =========================================================
 
+    // Shared with RangedEnemyMovement: move if blocked, shoot if clear.
+    // Check from both the body and the projectile's actual spawn point,
+    // so an exposed muzzle cannot shoot through a wall behind the body.
+    public bool HasClearShotToPlayer()
+    {
+        if (playerHealth == null ||
+            playerCollider == null ||
+            playerHealth.IsDead ||
+            projectileSpawnPoint == null)
+        {
+            return false;
+        }
+
+        Vector3 targetPosition =
+            playerCollider.bounds.center;
+
+        Vector3 bodyPosition =
+            enemyCollider != null
+                ? enemyCollider.bounds.center
+                : transform.position + Vector3.up * 0.5f;
+
+        return CombatLineOfSight.HasClearShot(
+                   bodyPosition,
+                   targetPosition
+               ) &&
+               CombatLineOfSight.HasClearShot(
+                   projectileSpawnPoint.position,
+                   targetPosition
+               );
+    }
+
     private AttackTarget GetDesiredAttackTarget()
     {
         if (rangedEnemyMovement.IsTargetingPlayer)
@@ -389,7 +426,8 @@ public class RangedEnemyAttack : MonoBehaviour
     {
         if (playerHealth == null ||
             playerCollider == null ||
-            playerHealth.IsDead)
+            playerHealth.IsDead ||
+            !HasClearShotToPlayer())
         {
             return;
         }

@@ -90,6 +90,7 @@ public class PlayerAttack : MonoBehaviour
 
     private PlayerMovement playerMovement;
     private PlayerHealth playerHealth;
+    private Collider playerCollider;
 
     private float attackTimer;
     private float attackDelayTimer;
@@ -202,6 +203,9 @@ public class PlayerAttack : MonoBehaviour
         playerHealth =
             GetComponent<PlayerHealth>();
 
+        playerCollider =
+            GetComponent<Collider>();
+
         if (combatStats == null)
         {
             Debug.LogError(
@@ -262,7 +266,7 @@ public class PlayerAttack : MonoBehaviour
         }
 
         EnemyHealth nearestEnemyHealth =
-            nearestEnemy.GetComponent<EnemyHealth>();
+            nearestEnemy.GetComponentInParent<EnemyHealth>();
 
         if (nearestEnemyHealth == null)
         {
@@ -899,11 +903,46 @@ public class PlayerAttack : MonoBehaviour
         float shortestDistance =
             float.MaxValue;
 
+        Vector3 shotOrigin =
+            attackPoint != null
+                ? attackPoint.position
+                : transform.position;
+
+        // The muzzle can peek past an edge while most of the hero is
+        // still behind cover. Both the body and the muzzle must see the
+        // target before the auto-attack may select that enemy.
+        Vector3 bodyOrigin =
+            playerCollider != null
+                ? playerCollider.bounds.center
+                : transform.position;
+
         foreach (
             Collider enemy
             in enemiesInRange
         )
         {
+            if (enemy == null)
+            {
+                continue;
+            }
+
+            EnemyHealth candidateHealth =
+                enemy.GetComponentInParent<EnemyHealth>();
+
+            if (candidateHealth == null ||
+                candidateHealth.IsDead ||
+                !CombatLineOfSight.HasClearShot(
+                    bodyOrigin,
+                    enemy.bounds.center
+                ) ||
+                !CombatLineOfSight.HasClearShot(
+                    shotOrigin,
+                    candidateHealth.transform.position
+                ))
+            {
+                continue;
+            }
+
             float distance =
                 Vector3.Distance(
                     transform.position,
